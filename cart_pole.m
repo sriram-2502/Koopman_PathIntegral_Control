@@ -50,21 +50,12 @@ for t_sim = t_start:dt_sim:t_end
     % udpate progress bar
     waitbar(t_sim/t_end,w_bar,sprintf(string(t_sim)+'/'+string(t_end) +'s'))
 
-    % setup switching control logic
-    if (abs(x_desired(2)-x_op(2)))*(180/pi) <= 30 %
-        u_volt = -K_lqr*(x_op'-x_desired');
-        u_volt = saturate_fun(u_volt,12,-12);
-        x_dot = x_op(3);
-        u_lqr  = volts_to_force(x_dot,u_volt);
-        u = u_lqr;
-    else
-        u_energy = get_energy_based(@dynamics_cart_pole, x_op);
-        u = u_energy;  
-    end
+    % get energy based control
+    u = get_swing_up_control(@dynamics_cart_pole, lqr_params, x_op, x_desired);
 
     x_next = rk4(@dynamics_cart_pole,dt_sim,x_op,u);
-    theta = x_next(2);
 
+    theta = x_next(2);
     % take theta as (360- theta), when theta < 0, otherwise theta = theta
     % only for LQR control 
     if theta < 0
@@ -90,16 +81,31 @@ delete(F);
 
 %% animate
 hf = figure(11);
-hf.WindowState = 'maximized';
-for i = 1:10:length(Xout1)
+% hf.WindowState = 'maximized';
+skip_rate  = 10;
+
+% Initialize movieVector array with the correct structure
+numFrames = floor(length(Xout1) / skip_rate);
+movieVector(1:numFrames) = struct('cdata', [], 'colormap', []);
+
+% Animation loop with frame index
+frameIndex = 1;
+for i = 1:skip_rate:length(Xout1)
    animate_cart_pole(Xout1(i,1),Xout1(i,2));
    pause(0.01);
-   movieVector(i) =  getframe(hf);
+
+   % Capture frame and assign it to movieVector
+   movieVector(frameIndex) = getframe(hf);
+   frameIndex = frameIndex + 1;
+
    hold off
 end
 
+% Remove any empty frames from movieVector (in case loop finished early)
+movieVector = movieVector(1:frameIndex-1);
+
 % Save the movie
-myWriter = VideoWriter('animations/cart_pole', 'MPEG-4');
+myWriter = VideoWriter('cart_pole', 'MPEG-4');
 myWriter.Quality    = 100;
 myWritter.FrameRate = 180;
 
