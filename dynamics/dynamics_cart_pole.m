@@ -6,6 +6,9 @@ function sys_info = dynamics_cart_pole(x, u)
 % outputs
 % sys info (struct)
 
+% init output struct
+sys_info = struct();
+
 % parameters
 r   = 0.006;       % radius of motor shaft
 M   = 0.135;       % Mass of cart
@@ -27,9 +30,6 @@ theta_dot = x(4);
 
 % parse control
 F = u;
-
-% init output struct
-sys_info = struct();
 
 %% Compute dxdt
 
@@ -66,6 +66,23 @@ Er  = 2*m*g*l;
 sys_info.E = E;
 sys_info.Er = Er;
 
+%% store system params
+sys_info.r  = r;
+sys_info.M  = M; 
+sys_info.m  = m;
+sys_info.I  = I; 
+sys_info.l  = l; 
+sys_info.g  = g;
+sys_info.b  = b; 
+sys_info.L  = L;
+sys_info.Rm = Rm;
+sys_info.kb = kb; 
+sys_info.kt = kt; 
+sys_info.c  = c; 
+
+% params for swing up control
+sys_info.n       = 3;
+sys_info.k_swing = 1.2;
 
 
 

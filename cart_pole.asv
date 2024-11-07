@@ -12,7 +12,6 @@ addpath('baseline_control')
 addpath('compute_eigfun')
 addpath('solve_riccati')
 addpath('utils')
-addpath('animations')
 
 %% load dynamics
 n_states = 4; 
@@ -88,28 +87,8 @@ end
 F = findall(0,'type','figure','tag','TMWWaitbar');
 delete(F);
 
-%% animate
-hf = figure(11);
-hf.WindowState = 'maximized';
-for i = 1:10:length(Xout1)
-   animate_cart_pole(Xout1(i,1),Xout1(i,2));
-   pause(0.01);
-   movieVector(i) =  getframe(hf);
-   hold off
-end
-
-% Save the movie
-myWriter = VideoWriter('animations/cart_pole', 'MPEG-4');
-myWriter.Quality    = 100;
-myWritter.FrameRate = 180;
-
-% Open the VideoWriter object, write the movie, and class the file
-open(myWriter);
-writeVideo(myWriter, movieVector);
-close(myWriter);
-
 %% state and control plots
-figure(22);
+figure(11);
 % First subplot: x
 subplot(2,2,1)
 plot(Tout, Xout1(:,1), 'DisplayName', '$x$'); hold on;
