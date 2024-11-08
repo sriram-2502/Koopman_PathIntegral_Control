@@ -42,20 +42,26 @@ sys_info.dxdt = dxdt;
 
 %% calculate linearization
 
-AA = I*(M+m) + M*m*(l^2);
-aa = (((m*l)^2)*g)/AA;
-bb = ((I +m*(l^2))/AA)*(c + (kb*kt)/(Rm*(r^2)));
+AA  = I*(M+m) + M*m*(l^2);
+aa  = (((m*l)^2)*g)/AA;
+bb  = ((I +m*(l^2))/AA)*(c + (kb*kt)/(Rm*(r^2)));
 cc  = (b*m*l)/AA;
 dd  = (m*g*l*(M+m))/AA;
 ee  = ((m*l)/AA)*(c + (kb*kt)/(Rm*(r^2)));
 ff  = ((M+m)*b)/AA;
-mm = ((I +m*(l^2))*kt)/(AA*Rm*r);
-nn = (m*l*kt)/(AA*Rm*r);
-A  =  [0 0 1 0; 0 0 0 1; 0 aa -bb -cc; 0 dd -ee -ff];
-B = [0;0; mm; nn]; 
+mm  = ((I +m*(l^2))*kt)/(AA*Rm*r);
+nn  = (m*l*kt)/(AA*Rm*r);
+A   = [0 0 1 0; 0 0 0 1; 0 aa -bb -cc; 0 dd -ee -ff];
+B   = [0;0; mm; nn]; 
 
 sys_info.A = A;
 sys_info.B = B;
+
+[~,D,W] = eig(A);
+sys_info.eig_vals    = D;
+sys_info.eig_vectors = W;
+
+% TODO: check if A is the same even if eqb point is [0 pi 0 0]
 
 %% setup params for energy shaping
 % Total energy
