@@ -19,11 +19,14 @@ show_animation = true;
 wrap_theta = true;
 
 %% load dynamics
-n_states = 4; 
-n_ctrl   = 1;
-x        = sym('x',[n_states;1],'real');
-u1        = sym('x',[n_ctrl;1],'real');
-sys_info = dynamics_cart_pole(x, u1);
+n_states        = 4; 
+n_ctrl          = 1;
+x               = sym('x',[n_states;1],'real');
+u1              = sym('x',[n_ctrl;1],'real');
+[f,sys_info]    = dynamics_cart_pole(x, u1);
+A               = sys_info.A;
+B               = sys_info.B;
+dynamics_linear = @(x,u)A*x+B*u;
 
 %% compute lqr gain
 Q = diag([200 1000 0 0]);
@@ -32,11 +35,11 @@ lqr_params = get_lqr(sys_info.A,sys_info.B,Q,R);
 K_lqr = lqr_params.K_lqr;
 
 %% simulation loop
-x_init      = [0.0 0.1 0.0 0.0]; 
+x_init      = [0.0 pi-0.1 0.0 0.0]; 
 x_desired   = [0.0 pi 0.0 0.0];            
 dt_sim      = 0.01; 
 t_start     = 0;
-t_end       = 10;
+t_end       = 1;
 max_iter    = floor(t_end/dt_sim);
 x_op        = x_init;
 
@@ -59,8 +62,8 @@ for t_sim = t_start:dt_sim:t_end
     u1 = get_swing_up_control(@dynamics_cart_pole, lqr_params, x_op, x_desired);
     
     % simulate using rk4
-    x_next = rk4(@dynamics_cart_pole,dt_sim,x_op,u1);
-    
+    x_next = rk4(@dynamics_cart_pole,dt_sim,x_op,0);
+
     % wrap theta if necessary
     if(wrap_theta)
         theta = x_next(2);
@@ -131,10 +134,11 @@ if(show_animation)
 end
 
 %% state and control plots
+Xout = Xout2;
 figure(22);
 % First subplot: x
 subplot(2,2,1)
-plot(Tout, Xout2(:,1), 'DisplayName', '$x$'); hold on;
+plot(Tout, Xout(:,1), 'DisplayName', '$x$'); hold on;
 xlabel('time (s)', 'Interpreter', 'latex');
 ylabel('position, $x$', 'Interpreter', 'latex');
 legend('Interpreter', 'latex');
@@ -142,7 +146,7 @@ grid on
 
 % Second subplot: theta
 subplot(2,2,2)
-plot(Tout, Xout2(:,2), 'DisplayName', '$\theta$'); hold on;
+plot(Tout, Xout(:,2), 'DisplayName', '$\theta$'); hold on;
 xlabel('time (s)', 'Interpreter', 'latex');
 ylabel('angle, $\theta$', 'Interpreter', 'latex');
 box on;
@@ -151,7 +155,7 @@ grid on
 
 % Third subplot: x_dot
 subplot(2,2,3)
-plot(Tout, Xout2(:,3), 'DisplayName', '$\dot{x}$'); hold on;
+plot(Tout, Xout(:,3), 'DisplayName', '$\dot{x}$'); hold on;
 xlabel('time (s)', 'Interpreter', 'latex');
 ylabel('velocity, $\dot{x}$', 'Interpreter', 'latex');
 box on;
@@ -160,7 +164,7 @@ grid
 
 % Fourth subplot: theta_dot
 subplot(2,2,4)
-plot(Tout, Xout2(:,4), 'DisplayName', '$\dot{\theta}$'); hold on;
+plot(Tout, Xout(:,4), 'DisplayName', '$\dot{\theta}$'); hold on;
 xlabel('time (s)', 'Interpreter', 'latex');
 ylabel('angular velocity, $\dot{\theta}$', 'Interpreter', 'latex');
 box on;

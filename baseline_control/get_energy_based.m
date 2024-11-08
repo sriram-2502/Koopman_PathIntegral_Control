@@ -1,7 +1,7 @@
 function u_energy = get_energy_based(dynamics, x_op)
     
     % get system info
-    sys_info = dynamics(x_op, 0);
+    [~,sys_info] = dynamics(x_op, 0);
 
     % parse states
     x           = x_op(1);

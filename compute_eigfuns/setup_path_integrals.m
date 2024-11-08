@@ -29,7 +29,7 @@ function phi_local = setup_path_integrals(x_op, dynamics)
 
     %% check for stable, anti-stable or saddle
     % TODO: add local controllers to make system locally stable
-    sys_info = dynamics(x_op,0);
+    [~,sys_info] = dynamics(x_op,0);
     D = sys_info.eig_vals;
     W = sys_info.eig_vectors;
     if(all(diag(D)>0))

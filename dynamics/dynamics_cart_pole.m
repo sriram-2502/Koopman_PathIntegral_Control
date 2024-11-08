@@ -1,4 +1,4 @@
-function sys_info = dynamics_cart_pole(x, u)
+function [dxdt, sys_info] = dynamics_cart_pole(x, u)
 % input
 % x - states (pos, angle, vel, ang vel)
 % u - control
@@ -41,7 +41,7 @@ dxdt = [x_ddot; theta_ddot];
 sys_info.dxdt = dxdt;
 
 %% calculate linearization
-
+% x_eqb = [0 pi 0 0]
 AA  = I*(M+m) + M*m*(l^2);
 aa  = (((m*l)^2)*g)/AA;
 bb  = ((I +m*(l^2))/AA)*(c + (kb*kt)/(Rm*(r^2)));
@@ -60,8 +60,6 @@ sys_info.B = B;
 [~,D,W] = eig(A);
 sys_info.eig_vals    = D;
 sys_info.eig_vectors = W;
-
-% TODO: check if A is the same even if eqb point is [0 pi 0 0]
 
 %% setup params for energy shaping
 % Total energy
