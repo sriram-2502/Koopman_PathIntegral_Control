@@ -60,6 +60,7 @@ sys_info.B = B;
 %% setup params for energy shaping
 % Total energy
 E = m*g*l*(1-cos(theta)) + (1/2)*(I + m*l^2)*(theta_dot^2);
+
 % Potential Energy
 Er  = 2*m*g*l;
 

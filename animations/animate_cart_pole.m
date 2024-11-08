@@ -7,6 +7,7 @@ persistent pjy
         j = 0;
     end
     j = j+1;
+
 W  = 0.2; % width of cart
 H  = 0.08; % hight of Cart
 L  = 0.35; % length of pendulum  
@@ -22,6 +23,8 @@ w2y = 0;
 % position of pendulum 
 px = x + L*sin(theta);
 py = y - L*cos(theta);
+% px = x + L*sin(pi-theta);
+% py = y - L*cos(pi-theta);
 
 pjx(j) = px;
 pjy(j) = py;
