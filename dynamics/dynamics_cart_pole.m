@@ -51,13 +51,24 @@ ee  = ((m*l)/AA)*(c + (kb*kt)/(Rm*(r^2)));
 ff  = ((M+m)*b)/AA;
 mm  = ((I +m*(l^2))*kt)/(AA*Rm*r);
 nn  = (m*l*kt)/(AA*Rm*r);
-A   = [0 0 1 0; 0 0 0 1; 0 aa -bb -cc; 0 dd -ee -ff];
+b   = 0.01; % damping
+A   = [b 0 1 0; 0 0 0 1; 0 aa -bb -cc; 0 dd -ee -ff];
 B   = [0;0; mm; nn]; 
 
 sys_info.A = A;
 sys_info.B = B;
 
 [~,D,W] = eig(A);
+sys_info.eig_vals    = D;
+sys_info.eig_vectors = W;
+sys_info.x_eqb       = [0; pi; 0; 0];
+
+%% define locally stable system
+K_poles = place(A,B,[-1;-2;-3;-4]);
+A_stable = A-B*K_poles;
+sys_info.A_stable = A_stable;
+
+[~,D,W] = eig(A_stable);
 sys_info.eig_vals    = D;
 sys_info.eig_vectors = W;
 

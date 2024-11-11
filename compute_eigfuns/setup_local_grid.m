@@ -9,7 +9,7 @@ function [xx_local, local_axes] = setup_local_grid(x_op)
     %   local_axes  - Cell array of grid points along each axis
 
     % grid params
-    grid_size = 0.02;  % Size of neighborhood around x_op
+    grid_size = 0.02;   % Size of neighborhood around x_op
     step_size = 0.01;   % Step size for the local grid
     
     n_dim = length(x_op);  % Number of dimensions

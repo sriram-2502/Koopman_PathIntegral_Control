@@ -26,17 +26,18 @@ u1              = sym('x',[n_ctrl;1],'real');
 [f,sys_info]    = dynamics_cart_pole(x, u1);
 A               = sys_info.A;
 B               = sys_info.B;
-dynamics_linear = @(x,u)A*x+B*u;
 
 %% compute lqr gain
 Q = diag([200 1000 0 0]);
 R  = 0.035;
 lqr_params = get_lqr(sys_info.A,sys_info.B,Q,R);
 K_lqr = lqr_params.K_lqr;
+P_lqr = lqr_params.P_lqr;
 
 %% simulation loop
 x_init      = [0.0 pi-0.1 0.0 0.0]; 
-x_desired   = [0.0 pi 0.0 0.0];            
+x_desired   = [0.0 pi 0.0 0.0];  
+x_eqb       = [0.0 pi 0.0 0.0]; 
 dt_sim      = 0.01; 
 t_start     = 0;
 t_end       = 1;
@@ -61,6 +62,8 @@ for t_sim = t_start:dt_sim:t_end
     % get energy based control
     u1 = get_swing_up_control(@dynamics_cart_pole, lqr_params, x_op, x_desired);
     
+    % compute eigfn based control
+
     % simulate using rk4
     x_next = rk4(@dynamics_cart_pole,dt_sim,x_op,0);
 
@@ -76,10 +79,8 @@ for t_sim = t_start:dt_sim:t_end
         x_next_wrapped = x_next';
     end
 
-    % change zero eqb point to pi (only for plots)
-    theta = x_next(2);
-    theta = pi - theta;
-    x_next_saddle = [x_next(1) theta x_next(3) x_next(4)];
+    % shift eqb point to unstable point
+    x_next_saddle = x_next' - x_eqb;
     
     % update states
     x_op = x_next';
