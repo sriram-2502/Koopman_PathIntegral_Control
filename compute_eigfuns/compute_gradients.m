@@ -1,4 +1,4 @@
-function grad_phi_dim = compute_gradients(x_op, phi)
+function grad_phi_x_op = compute_gradients(x_op, phi)
 % Compute the gradient of phi at the operating point x_op.
 %
 % Inputs:
@@ -17,30 +17,32 @@ function grad_phi_dim = compute_gradients(x_op, phi)
     grid_points = [grid_points{:}];  % Concatenate into a single matrix
     
     % Initialize variables to store each dimension's phi values
-    phi_dim = cell(n_dim, 1);
-    grad_phi_dim = cell(n_dim, n_dim);
+    grad_phi_x_op = cell(n_dim, n_dim);
     
+    % loop for each eig fun
     for dim = 1:n_dim
         % Get the grid for the current dimension (axis values for this dimension)
-        axis = local_axes{dim};
+        grid  = local_axes{dim};
+        delta = grid(2) - grid(1);  % Step size (assumed uniform)
         
+        % Find the index corresponding to the center (midpoint) of the grid
+        idx_center = ceil(length(grid) / 2);  % Center index of the grid
+
         % Extract the phi values for this dimension (phi_dim)
         phi_dim = phi.phi{dim};  % phi values for the current dimension
         
-        % Find the index corresponding to the center (midpoint) of the grid
-        idx_center = ceil(length(axis) / 2);
+        % Initialize the gradient vector at the center
+        grad_phi = nan(n_dim, 1);  % Initialize gradient vector for the current dimension
         
-        % Initialize the gradient at the center (start with NaN for safety)
-        grad_phi = nan(1, 1);
-        
-        % Calculate the gradient at the center point using central difference
-        if idx_center > 1 && idx_center < length(axis)
-            delta_x = axis(idx_center + 1) - axis(idx_center - 1); % Central difference step size
-            grad_phi = (phi_dim(idx_center + 1) - phi_dim(idx_center - 1)) / delta_x;
+        % loop for each direction
+        for dir = 1:length(x_op)
+            % Compute the central difference formula in the current direction
+            % TODO: generalize to n dim
+            grad_phi(dir) = (phi_dim(idx_center + 1, dir) - phi_dim(idx_center - 1, dir)) / (2 * delta);
         end
         
-        % Store the gradient in the cell array for this dimension
-        grad_phi_center{dim} = grad_phi;
+        % Store the gradient for the current dimension
+        grad_phi_x_op{dim} = grad_phi;  % Store the gradient vector in the cell array
     end
     
 end
