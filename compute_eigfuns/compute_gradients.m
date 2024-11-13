@@ -1,56 +1,46 @@
-function grad_phi = compute_gradients(x_op, phi)
-    % Inputs:
-    % x_op  : current operating point
-    % phi   : struct of eig funs
-    %
-    % Outputs:
-    % grad_phi  : output struct
-    
-    % parse dimensions
-    n_dim = length(x_op);
-    
-    % get local grid used for phi
-    xx_local    = phi.grid;
-    local_axes  = phi.axis;
+function grad_phi_dim = compute_gradients(x_op, phi)
+% Compute the gradient of phi at the operating point x_op.
+%
+% Inputs:
+% x_op     : current operating point (1 x n_dim array)
+% phi      : struct containing phi values, phi_linear, phi_nonlinear, and phi_integrand
+%
+% Outputs:
+% grad_phi_x_op : Matrix containing the gradient of phi at x_op for each dimension
 
-    % slice grid points
-    axis_length = length(phi.axis{1}); % TODO: generalize to n dim
-    slice = repmat({1:axis_length}, 1, n_dim);
+    n_dim = length(x_op);   % Dimension of the space
+    local_grid = phi.grid;  % Local grid values
+    local_axes = phi.axis;  % Axis values for each dimension
 
-    % Loop over each phi function to compute its gradient
-    d_phi_dx = cell(1, n_dim); 
-    for i = 1:n_dim
-        d_phi_dx{i} = gradient(phi.phi(slice{:},i), local_axes{:});
-    end  
+    % Flatten each grid into a column and concatenate into a matrix of points
+    grid_points = cellfun(@(grid) grid(:), local_grid, 'UniformOutput', false);
+    grid_points = [grid_points{:}];  % Concatenate into a single matrix
     
-    % flip direction 1 and 2 to match ndgrid with state space axis
-    gradients = cell(1, n_dim);
-    for i = 1:n_dim 
-        order = [2, 1, 3, 4]; %TODO: generlaize to ndim
-        gradients{i} = permute(d_phi_dx{i}, order);
-    end
+    % Initialize variables to store each dimension's phi values
+    phi_dim = cell(n_dim, 1);
+    grad_phi_dim = cell(n_dim, n_dim);
     
-    % find the idx of x_op
-    idx_center = num2cell(repmat(ceil(axis_length / 2), 1, n_dim));
-    slice_idx = repmat({3}, 1, 4);
-
-    % Initialize a cell array to store gradient slices
-    grad_phi_x_op = nan(n_dim, n_dim);
-    
-    % Loop through each function and extract the gradient slice for each dimension
-    for i = 1:n_dim        
-        % Set the appropriate index for the current dimension (func_idx)
-         slice_idx{i} = ':';
+    for dim = 1:n_dim
+        % Get the grid for the current dimension (axis values for this dimension)
+        axis = local_axes{dim};
         
-        % Extract the gradient slice for the current function at the specified point
-        grad_phi_x_op(:,i) = gradients{i}(slice_idx{:});
+        % Extract the phi values for this dimension (phi_dim)
+        phi_dim = phi.phi{dim};  % phi values for the current dimension
+        
+        % Find the index corresponding to the center (midpoint) of the grid
+        idx_center = ceil(length(axis) / 2);
+        
+        % Initialize the gradient at the center (start with NaN for safety)
+        grad_phi = nan(1, 1);
+        
+        % Calculate the gradient at the center point using central difference
+        if idx_center > 1 && idx_center < length(axis)
+            delta_x = axis(idx_center + 1) - axis(idx_center - 1); % Central difference step size
+            grad_phi = (phi_dim(idx_center + 1) - phi_dim(idx_center - 1)) / delta_x;
+        end
+        
+        % Store the gradient in the cell array for this dimension
+        grad_phi_center{dim} = grad_phi;
     end
-
-    % Store everything in a structured output
-    grad_phi = struct();
-    grad_phi.grad_phi = gradients;
-
-    % order matters according to eigvals of A (sorted max to min)
-    grad_phi.grad_phi_x_op = grad_phi_x_op;
-
+    
 end
