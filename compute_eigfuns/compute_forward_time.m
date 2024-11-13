@@ -3,7 +3,8 @@ function phi_forward = compute_forward_time(x_local, x_eqb, dynamics, D, W)
     % parse inputs
     n_dim = length(x_eqb);
     [~,sys_info] = dynamics(x_local,0);
-    A = sys_info.A;
+    A_stable = sys_info.A_stable;
+    dynamics_linearized = @(x,u) A_stable*x;
 
     % make sure all eigvals are positive
      if(any(diag(D)>0))
@@ -13,18 +14,18 @@ function phi_forward = compute_forward_time(x_local, x_eqb, dynamics, D, W)
 
     %% open loop simualtion
     t_start = 0;
-    dt_sim  = 0.01;
-    t_end   = 1;
+    dt_sim  = 0.1;
+    t_end   = 2;
     Xout    = x_local';
     Tout    = 0;
     for t_sim = t_start:dt_sim:t_end
 
         % forward simulate using rk4 with no control
         x_next_full   = rk4(dynamics,dt_sim,x_local,0);
-        x_next_linear = A*x_local;
+        x_next_linear = rk4(dynamics_linearized,dt_sim,x_local,0);
 
         % shift eqb point
-        x_next_full   = x_next_full - x_eqb;
+        x_next_full   = x_next_full   - x_eqb;
         x_next_linear = x_next_linear - x_eqb;
 
         % get nonlinear part only

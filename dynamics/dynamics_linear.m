@@ -11,6 +11,7 @@ sys_info = struct();
 n_dim = length(x);
 
     %% Compute dxdt
+    rng(200)
     A = rand(n_dim);
     B = eye(n_dim,1);
     
@@ -18,16 +19,9 @@ n_dim = length(x);
         disp('!!! system not controllable. try again')
         exit
     end
+
     [~,D,W] = eig(A);
-    
     dxdt = A*x + B*u;
-    
-    sys_info.dxdt        = dxdt;
-    sys_info.A           = A;
-    sys_info.B           = B;
-    sys_info.eig_vals    = D;
-    sys_info.eig_vectors = W;
-    sys_info.x_eqb       = zeros(size(x));
    
     %% define locally stable system
     K_poles = place(A,B,-(1:n_dim));
@@ -35,6 +29,15 @@ n_dim = length(x);
     sys_info.A_stable = A_stable;
     
     [~,D,W] = eig(A_stable);
+    dxdt = A_stable*x + B*u;
+    
+    %% parse outputs
+    sys_info.dxdt        = dxdt;
+    sys_info.A           = A;
+    sys_info.B           = B;
+    sys_info.eig_vals    = D;
+    sys_info.eig_vectors = W;
+    sys_info.x_eqb       = zeros(size(x));
     sys_info.eig_vals    = D;
     sys_info.eig_vectors = W;
 

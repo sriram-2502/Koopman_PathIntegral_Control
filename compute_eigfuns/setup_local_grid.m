@@ -1,12 +1,12 @@
-function [xx_local, local_axes] = setup_local_grid(x_op)
+function [local_grid, local_axes] = setup_local_grid(x_op)
     % setup_local_grid_nd creates an n-dimensional local grid centered around x_op.
     %
     % Inputs:
-    %   x_op        - Center point of the grid (n x 1 vector)
+    %   x_op          - Center point of the grid (n x 1 vector)
     %
     % Outputs:
-    %   xx_local    - Cell array containing meshgrid values for each dimension
-    %   local_axes  - Cell array of grid points along each axis
+    %   local_grid    - Cell array containing meshgrid values for each dimension
+    %   local_axes    - Cell array of grid points along each axis
 
     % grid params
     grid_size = 0.02;   % Size of neighborhood around x_op
@@ -19,9 +19,10 @@ function [xx_local, local_axes] = setup_local_grid(x_op)
     
     % Create grid points for each dimension
     for i = 1:n_dim
-        local_axes{i} = x_op(i) - grid_size : step_size : x_op(i) + grid_size;
+        % Generate two points: one before x_op and one after x_op
+        local_axes{i} = [x_op(i) - step_size, x_op(i), x_op(i) + step_size];
     end
     
     % Generate meshgrid based on local_axes for n-dimensional grid
-    [xx_local{1:n_dim}] = ndgrid(local_axes{:});
+    [local_grid{1:n_dim}] = ndgrid(local_axes{:});
 end

@@ -7,8 +7,8 @@ function phi = setup_path_integrals(x_op, dynamics)
     
     %% setup grid
     [local_grid, local_axes] = setup_local_grid(x_op);
-    num_elements = numel(local_grid{:});
-    n_dim = length(x_op);
+    num_elements             = numel(local_grid{1});
+    n_dim                    = length(x_op);
 
     % Flatten each grid into a column and concatenate into a matrix of points
     grid_points = cellfun(@(grid) grid(:), local_grid, 'UniformOutput', false);
@@ -35,9 +35,14 @@ function phi = setup_path_integrals(x_op, dynamics)
 
     %% Local path integral computation
     % Iterate through all grid points
-    for idx = 1:num_elements
-        x_local = grid_points(idx,:);
+    % show progress bar
+    w_bar = waitbar(0,'1','Name','computing path integrals ...',...
+    'CreateCancelBtn','setappdata(gcbf,''canceling'',1)');
 
+    for idx = 1:num_elements
+        waitbar(idx/num_elements,w_bar,sprintf(string(idx)+'/'+string(num_elements)))
+        x_local = grid_points(idx,:)';
+    
         % compute path integral at that point
         if(all(diag(D) < 0))
             phi_forward = compute_forward_time(x_local, x_eqb, dynamics, D, W);
@@ -67,6 +72,10 @@ function phi = setup_path_integrals(x_op, dynamics)
             end
         end
     end
+
+    % delete progress bar
+    F = findall(0,'type','figure','tag','TMWWaitbar');
+    delete(F);
 
     %% store everything in a struct
     phi = struct();
