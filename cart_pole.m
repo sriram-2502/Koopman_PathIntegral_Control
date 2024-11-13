@@ -9,7 +9,8 @@ set(0,'defaultfigurecolor',[1 1 1])
 % add paths
 addpath('dynamics')
 addpath('baseline_control')
-addpath('compute_eigfun')
+addpath('eigfun_control')
+addpath('compute_eigfuns')
 addpath('solve_riccati')
 addpath('utils')
 addpath('animations')
@@ -17,6 +18,7 @@ addpath('animations')
 % setup params
 show_animation = true;
 wrap_theta = true;
+show_diagnositcs = true;
 
 %% load dynamics
 n_states        = 4; 
@@ -26,13 +28,13 @@ u1              = sym('x',[n_ctrl;1],'real');
 [f,sys_info]    = dynamics_cart_pole(x, u1);
 A               = sys_info.A;
 B               = sys_info.B;
+W               = sys_info.eig_vectors;
+D               = sys_info.eig_vals;
 
 %% compute lqr gain
 Q = diag([200 1000 0 0]);
 R  = 0.035;
 lqr_params = get_lqr(sys_info.A,sys_info.B,Q,R);
-K_lqr = lqr_params.K_lqr;
-P_lqr = lqr_params.P_lqr;
 
 %% simulation loop
 x_init      = [0.0 pi-0.1 0.0 0.0]; 
@@ -43,6 +45,23 @@ t_start     = 0;
 t_end       = 1;
 max_iter    = floor(t_end/dt_sim);
 x_op        = x_init;
+t_span      = t_start:dt_sim:t_end;
+
+% solve differential riccati
+Q = eye(size(A));
+R = 0.1;
+lqr_params_transformed = get_lqr_transformed(D,W'*B,Q,R);
+[t_riccati,P_riccati] = compute_riccati(sys_info, lqr_params_transformed, t_span);
+P_riccate_cur = reshape(P_riccati(1,:),size(A));
+
+% check P matrices are the same
+if(show_diagnositcs)
+    % solving lqr in koopman coordinates
+    [K_lqr,P_lqr,e] = lqr(D,W'*B,lqr_params_transformed.Q,lqr_params_transformed.R);
+    disp('check if P_lqr matches with P_riccati')
+    P_lqr
+    P_riccate_cur
+end
 
 % logs
 Tout    = t_start;
@@ -57,12 +76,17 @@ w_bar = waitbar(0,'1','Name','running simulation loop...',...
 for t_sim = t_start:dt_sim:t_end
 
     % udpate progress bar
+    iter = ceil(t_sim/t_end)+1;
     waitbar(t_sim/t_end,w_bar,sprintf(string(t_sim)+'/'+string(t_end) +'s'))
 
     % get energy based control
     u1 = get_swing_up_control(@dynamics_cart_pole, lqr_params, x_op, x_desired);
     
     % compute eigfn based control
+    phi = setup_path_integrals(x_op, @dynamics_cart_pole);
+    grad_phi = compute_gradients(x_op, phi);
+    P_riccati_curr = reshape(P_riccati(iter,:),size(A));
+    u2 = compute_control(sys_info, lqr_params_transformed, P_riccati_curr, phi, grad_phi);
 
     % simulate using rk4
     x_next = rk4(@dynamics_cart_pole,dt_sim,x_op,0);

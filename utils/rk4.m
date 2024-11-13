@@ -1,29 +1,20 @@
 function x_next = rk4(dynamics, dt_sim, x_op, u)
-    x = x_op(1:2)';
-    z = x_op(3:4)';
+    % Runge-Kutta 4th Order (RK4) integration method
+    % Inputs:
+    %   dynamics - function handle for system dynamics, returning dxdt
+    %   dt_sim - time step for integration
+    %   x_op - current state vector
+    %   u - control input vector
+    %
+    % Output:
+    %   x_next - next state vector after time step dt_sim
+
+    % Calculate the four increments (k1, k2, k3, k4)
+    k1 = dynamics(x_op, u);
+    k2 = dynamics(x_op + 0.5 * dt_sim * k1, u);
+    k3 = dynamics(x_op + 0.5 * dt_sim * k2, u);
+    k4 = dynamics(x_op + dt_sim * k3, u);
     
-    k1 = z;
-    states = [x;z];
-    dxdt = dynamics(states,u);
-    l1 = dxdt(1:2); % take pos states only
-    
-    k2 = z + (dt_sim/2).*l1;
-    states = [x+(dt_sim/2).*k1; z+(dt_sim/2).*l1];
-    dxdt = dynamics(states,u);
-    l2 = dxdt(1:2);
-    
-    k3 = z + (dt_sim/2).*l2;
-    states = [x+(dt_sim/2).*k2; z+(dt_sim/2).*l2];
-    dxdt = dynamics(states,u);
-    l3 = dxdt(1:2);
-    
-    k4 = z + dt_sim.*l3;
-    states = [x+dt_sim.*k3; z+dt_sim.*l3];
-    dxdt = dynamics(states,u);
-    l4 = dxdt(1:2);
-    
-    x_update = x + (dt_sim/6).*(k1 + 2.*k2 + 2.*k3 + k4);
-    z_update = z + (dt_sim/6).*(l1 + 2.*l2 + 2.*l3 + l4);
-    
-    x_next = [x_update;z_update];
+    % Compute the next state
+    x_next = x_op + (dt_sim / 6) * (k1 + 2*k2 + 2*k3 + k4);
 end

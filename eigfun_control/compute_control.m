@@ -1,7 +1,7 @@
 function u = compute_control(sys_info, lqr_params, P_riccati, phi, grad_phi)
 
     % parse system info
-    W = sys_info.W;
+    W = sys_info.eig_vectors;
     B = W'*sys_info.B; %lienarized version of g(x)
 
     % parse lqr params
@@ -12,6 +12,6 @@ function u = compute_control(sys_info, lqr_params, P_riccati, phi, grad_phi)
     grad_phi = grad_phi.grad_phi_x_op;
 
     % get control
-    u = -inv(R)*B'*(phi'*P_riccati*grad_phi)';
+    u = -inv(R)*B'*phi*P_riccati*grad_phi';
     
 end
