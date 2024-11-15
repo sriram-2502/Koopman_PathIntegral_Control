@@ -15,9 +15,9 @@ addpath('utils')
 addpath('animations')
 
 
-%% setup a random linear system
-% x_op = [1;2;3];
-x_op = [1;2];
+%% setup a random linear system of any dimension
+n_states = 3;
+x_op = rand(n_states,1);
 [~,sys_info] = dynamics_linear(x_op,0);
 
 %% compute path integrals and gradients
