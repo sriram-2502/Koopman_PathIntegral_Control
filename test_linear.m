@@ -52,7 +52,7 @@ gradient_error = sys_info.eig_vectors' - grad_phi_x_op
 
 %% compute lqr gain
 Q             = eye(n_states,n_states);
-Q_transformed = inv(W')*Q*W';
+Q_transformed = inv(W)*Q*inv(W');
 R             = ones(n_ctrl);
 lqr_params    = get_lqr(A,B,Q,R);
 
@@ -78,10 +78,16 @@ P_riccati_curr = reshape(P_riccati(1,:),size(A));
 
 % check P matrices are the same
 if(show_diagnositcs)
-    disp('check if P_lqr matches with P_riccati')
+    % check P in transformed coordinates for finite vs inf horizon
+    disp('check P in transformed coordinates for finite vs inf horizon')
     P_infinite = lqr_params_transformed.P_lqr;
     P_finite   = P_riccati_curr;
     riccati_error = P_infinite-P_finite
+    
+    % check P in both transformed and orig coordintes for inf horizon
+    disp('Transform P to orig coordinates and check error for inf horizon')
+    [K,P,e] = lqr(A,B,Q,R);
+    P_error = P - W*P_infinite*W'
 end
 
 % logs
@@ -111,9 +117,8 @@ for t_sim = t_start:dt_sim:t_end
     phi_x_op                    = phi.phi_x_op;
     grad_phi_x_op               = compute_gradients(phi);
     grad_phi_x_op               = grad_phi_x_op';
-    P_riccati_curr              = inv(W')*reshape(P_riccati(iter,:),size(A))*W';
-    u1                          = compute_control(lqr_params,P_riccati_curr, phi_x_op, grad_phi_x_op);
-    % u11                         = compute_control(lqr_params, lqr_params.P_lqr, phi_x_op, grad_phi_x_op);
+    P_riccati_curr              = reshape(P_riccati(iter,:),size(A));
+    u1                          = compute_control(lqr_params_transformed,P_riccati_curr, phi_x_op, grad_phi_x_op);
 
     if(show_diagnositcs)
         phi_exact = (W'*x_op1')';
