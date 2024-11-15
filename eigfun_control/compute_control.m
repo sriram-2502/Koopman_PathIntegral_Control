@@ -1,17 +1,13 @@
-function u = compute_control(sys_info, lqr_params, P_riccati, phi, grad_phi)
+function u = compute_control(sys_info, lqr_params, phi_x_op, grad_phi_x_op)
 
     % parse system info
-    W = sys_info.eig_vectors;
-    B = W'*sys_info.B; %lienarized version of g(x)
+    B           = sys_info.B; %lienarized version of g(x)
+    P_riccati   = lqr_params.P_riccati_curr;
 
     % parse lqr params
     R = lqr_params.R;
 
-    % get eig fun and its grad at current x_op
-    phi = phi.phi_x_op;
-    grad_phi = grad_phi.grad_phi_x_op;
-
     % get control
-    u = -inv(R)*B'*phi*P_riccati*grad_phi';
+    u = -inv(R)*B'*(phi_x_op*P_riccati*grad_phi_x_op)';
     
 end

@@ -1,4 +1,8 @@
 function phi = setup_path_integrals(x_op, dynamics)
+    
+    show_wait_bar   = false;
+    show_diagnostics = false;
+
     %% setup grid
     [local_grid, local_axes] = setup_local_grid(x_op);
     num_elements = numel(local_grid{1}); % Number of grid points
@@ -14,12 +18,6 @@ function phi = setup_path_integrals(x_op, dynamics)
     W               = sys_info.eig_vectors;
     x_eqb           = sys_info.x_eqb;
 
-    if(all(diag(D) < 0))
-        disp('---- using forward time path integrals -----')
-    elseif(all(diag(D) > 0))
-        disp('---- using reverse time path integrals -----')
-    end
-
     %% Local path integral computation
     % Initialize arrays to store computed values
     phi_complete  = nan(num_elements, n_dim);
@@ -29,10 +27,14 @@ function phi = setup_path_integrals(x_op, dynamics)
     phi_x_op      = nan(1, n_dim);  
     
     % load a progress bar
-    w_bar = waitbar(0,'1','Name','computing path integrals ...', 'CreateCancelBtn','setappdata(gcbf,''canceling'',1)');
+    if(show_wait_bar)
+        w_bar = waitbar(0,'1','Name','computing path integrals ...', 'CreateCancelBtn','setappdata(gcbf,''canceling'',1)');
+    end
 
     for idx = 1:num_elements
-        waitbar(idx/num_elements,w_bar,sprintf(string(idx)+'/'+string(num_elements)))
+        if(show_wait_bar)
+            waitbar(idx/num_elements,w_bar,sprintf(string(idx)+'/'+string(num_elements)))
+        end
         x_local = grid_points(idx,:)';
 
         % compute path integral at that point
@@ -45,7 +47,9 @@ function phi = setup_path_integrals(x_op, dynamics)
 
             % Extract values for current operating point
             if(norm(x_local - x_op) <= 1e-3)
-                disp('----- computing eig_fun at x_op -----')
+                if(show_diagnostics)
+                    disp('----- computing eig_fun at x_op -----')
+                end
                 phi_x_op(1:n_dim) = phi_forward.phi(:)';
             end
 
@@ -63,10 +67,11 @@ function phi = setup_path_integrals(x_op, dynamics)
             end
         end
     end
-
+    if(show_wait_bar)
     % delete progress bar
-    F = findall(0,'type','figure','tag','TMWWaitbar');
-    delete(F);
+        F = findall(0,'type','figure','tag','TMWWaitbar');
+        delete(F);
+    end
 
     %% Reshape phi.phi into cells
     phi_complete_cell   = cell(n_dim, 1);

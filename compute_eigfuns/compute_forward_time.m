@@ -21,8 +21,8 @@ function phi_forward = compute_forward_time(x_local, x_eqb, dynamics, D, W)
     for t_sim = t_start:dt_sim:t_end
 
         % forward simulate using rk4 with no control
-        x_next_full   = rk4(dynamics,dt_sim,x_local,0);
-        x_next_linear = rk4(dynamics_linearized,dt_sim,x_local,0);
+        x_next_full   = euler(dynamics,dt_sim,x_local,0);
+        x_next_linear = euler(dynamics_linearized,dt_sim,x_local,0);
 
         % shift eqb point
         x_next_full   = x_next_full   - x_eqb;
