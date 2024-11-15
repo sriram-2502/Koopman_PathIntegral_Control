@@ -24,7 +24,7 @@ rng(15)
 
 %% setup a random linear system of any dimension
 dynamics        = @dynamics_linear;
-n_states        = 3; 
+n_states        = 4; 
 n_ctrl          = 1; % TODO: check wth n_ctrl > 1
 x_op            = rand(n_states,1);
 x               = sym('x',[n_states;1],'real');
