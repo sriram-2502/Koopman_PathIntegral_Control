@@ -1,4 +1,4 @@
-function grad_phi_x_op = compute_gradients(x_op, phi)
+function grad_phi_x_op = compute_gradients(phi)
 % Compute the gradient of phi at the operating point x_op for each phi function.
 %
 % Inputs:
@@ -9,7 +9,7 @@ function grad_phi_x_op = compute_gradients(x_op, phi)
 % grad_phi_x_op : n_dim x n_dim matrix, each column containing the gradient of
 %                 each phi function at x_op in each dimension
 
-    n_dim = length(x_op);               % Number of dimensions
+    n_dim = length(phi.phi_x_op);               % Number of dimensions
     grad_phi_x_op = nan(n_dim, n_dim);  % Matrix to store gradients for each phi function
 
     % Loop over each phi function

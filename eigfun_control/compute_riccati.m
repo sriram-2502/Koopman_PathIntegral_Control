@@ -1,11 +1,7 @@
-function [t_riccati,P_riccati] = compute_riccati(sys_info, lqr_params_transfomed, t_span)
+function [t_riccati,P_riccati] = compute_riccati(lqr_params_transfomed, t_span)
     
-    % check controlability and observability
-    A_transformed = sys_info.eig_vals;
-    W = sys_info.eig_vectors;
-    B_transformed = W'*sys_info.B;
-
-    % get LQR params
+    A_transformed    = lqr_params_transfomed.A;
+    B_transformed    = lqr_params_transfomed.B;
     Q_transformed    = lqr_params_transfomed.Q;
     R_transformed    = lqr_params_transfomed.R;
     Q_T_transformed  = lqr_params_transfomed.Q_terminal;

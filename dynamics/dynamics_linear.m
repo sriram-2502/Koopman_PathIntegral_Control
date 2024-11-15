@@ -13,17 +13,15 @@ n_dim = length(x);
     %% Compute dxdt
     rng(200)
     A = rand(n_dim);
-    B = eye(n_dim,1);
+    B = eye(n_dim,1); % TODO: check this to make [0 0 ... 1]
+    n = length(x);
     
-    if(~rank(ctrb(A,B))==rank(A))
+    if(~rank(ctrb(A,B))==n)
         disp('!!! system not controllable. try again')
         exit
     end
-
-    [~,D,W] = eig(A);
-    dxdt    = A*x + B*u;
    
-    %% define locally stable system
+    % define locally stable system
     K_poles = place(A,B,-(1:n_dim));
     A_stable = A-B*K_poles;
     

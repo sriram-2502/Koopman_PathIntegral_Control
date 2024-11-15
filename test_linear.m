@@ -25,15 +25,15 @@ rng(15)
 %% setup a random linear system of any dimension
 dynamics        = @dynamics_linear;
 n_states        = 4; 
-n_ctrl          = 1;
-x_op1           = rand(n_states,1);
+n_ctrl          = 1; % TODO: check wth n_ctrl > 1
+x_op            = rand(n_states,1);
 x               = sym('x',[n_states;1],'real');
 u               = sym('x',[n_ctrl;1],'real');
 [f,sys_info]    = dynamics(x, u);
 A               = sys_info.A_stable;
 B               = sys_info.B;
 W               = sys_info.eig_vectors;
-D               = sys_info.eig_vals;
+D               = sys_info.eig_vals; %TODO: check if order matters
 
 if(all(diag(D) < 0))
     disp('---- using forward time path integrals -----')
@@ -42,41 +42,46 @@ elseif(all(diag(D) > 0))
 end
 
 %% compute path integrals and gradients
-phi             = compute_path_integrals(x_op1, dynamics);
-grad_phi_x_op   = compute_gradients(x_op1, phi);
+phi             = compute_path_integrals(x_op, dynamics);
+grad_phi_x_op   = compute_gradients(phi);
+grad_phi_x_op   = grad_phi_x_op';
 
 %% verify the gradients is the same as left eigenvectors
 disp('check eigenfunction gradient matches with left eigenvector of A')
-gradient_error = sys_info.eig_vectors - grad_phi_x_op
+gradient_error = sys_info.eig_vectors' - grad_phi_x_op
 
 %% compute lqr gain
 Q             = eye(n_states,n_states);
 Q_transformed = inv(W')*Q*W';
 R             = ones(n_ctrl);
+lqr_params    = get_lqr(A,B,Q,R);
 
 % solving lqr in koopman coordinates
-A_transformed = D;
-B_transformed = W'*B;
-lqr_params    = get_lqr(A_transformed,B_transformed,Q_transformed,R);
+A_transformed           = D;
+B_transformed           = W'*B;
+lqr_params_transformed  = get_lqr(A_transformed,B_transformed,Q_transformed,R);
 
 %% simulation loop
 x_init      = 10*rand(n_states,1);
 dt_sim      = 0.1; 
-t_start     = 0;
-t_end       = 5;
+t_start     = 0.0;
+t_end       = 5.0;
 max_iter    = floor(t_end/dt_sim);
 x_op1       = x_init';
 x_op2       = x_init';
 t_span      = t_start:dt_sim:t_end;
+iter        = 1;
 
 % solve differential riccati
-[t_riccati,P_riccati] = compute_riccati(sys_info, lqr_params, t_span);
-lqr_params.P_riccati_curr = reshape(P_riccati(1,:),size(A));
+[t_riccati,P_riccati] = compute_riccati(lqr_params_transformed, t_span);
+P_riccati_curr = reshape(P_riccati(1,:),size(A));
 
 % check P matrices are the same
 if(show_diagnositcs)
     disp('check if P_lqr matches with P_riccati')
-    riccati_error = lqr_params.P_lqr-lqr_params.P_riccati_curr
+    P_infinite = lqr_params_transformed.P_lqr;
+    P_finite   = P_riccati_curr;
+    riccati_error = P_infinite-P_finite
 end
 
 % logs
@@ -87,7 +92,9 @@ Uout1   = [];
 Uout2   = []; 
 
 if(show_diagnositcs)
-    phi_error = [];
+    Phi_error = [];
+    Phi_exact = [];
+    Phi_pred = [];
 end
 
 % show progress bar
@@ -97,34 +104,41 @@ p_bar = waitbar(0,'1','Name','running simulation loop...',...
 for t_sim = t_start:dt_sim:t_end
 
     % udpate progress bar
-    iter = ceil(t_sim/t_end)+1;
     waitbar(t_sim/t_end,p_bar,sprintf(string(t_sim)+'/'+string(t_end) +'s'))
     
-    % compute eigfn based control
+    % ------ compute eigfn based control ------
     phi                         = compute_path_integrals(x_op1', dynamics);
     phi_x_op                    = phi.phi_x_op;
-    grad_phi_x_op               = compute_gradients(x_op1', phi);
-    lqr_params.P_riccati_curr   = reshape(P_riccati(iter,:),size(A));
-    u1                          = compute_control(sys_info, lqr_params, phi_x_op, grad_phi_x_op);
+    grad_phi_x_op               = compute_gradients(phi);
+    grad_phi_x_op               = grad_phi_x_op';
+    P_riccati_curr              = inv(W')*reshape(P_riccati(iter,:),size(A))*W';
+    u1                          = compute_control(lqr_params,P_riccati_curr, phi_x_op, grad_phi_x_op);
+    % u11                         = compute_control(lqr_params, lqr_params.P_lqr, phi_x_op, grad_phi_x_op);
 
     if(show_diagnositcs)
-        error = phi_x_op - (W'*x_op2')';
-        phi_error = [phi_error;error];
+        phi_exact = (W'*x_op1')';
+        phi_pred  = phi_x_op;
+        phi_error = phi_pred - phi_exact;
+
+        Phi_error = [Phi_error;phi_error];
+        Phi_exact = [Phi_exact; phi_exact];
+        Phi_pred  = [Phi_pred; phi_pred];
     end
 
-    % get baseline lqr control
-    K  = lqr(A,B,Q,R);
-    u2 = K*x_op2';
+    % ------ get baseline lqr control ------
+    [K,P,e] = lqr(A,B,Q,R);
+    u2 = -inv(R)*B'*P*x_op2';
 
-    % simulate the system
+    % ------ simulate the system ------
     x_next1 = rk4(dynamics,dt_sim,x_op1',u1);
     x_next2 = rk4(dynamics,dt_sim,x_op2',u2);
   
-    % update states
+    % ------ update states ------
     x_op1 = x_next1';
     x_op2 = x_next2';
+    iter  = iter + 1;
 
-    % logs 
+    % ------ logs ------
     Tout  = [Tout;t_sim];
     Xout1 = [Xout1;x_op1];
     Xout2 = [Xout2;x_op2];
@@ -170,4 +184,22 @@ for i = 1:n_ctrl
     ylabel(['Control ', num2str(i)], 'Interpreter', 'latex');  % Generic label for each state
     legend('Interpreter', 'latex');
     grid on;
+end
+
+%% plot eignefunctions for comparison
+figure(44);
+if(show_diagnositcs)
+    for i = 1:n_states
+        % Create a subplot grid
+        subplot(n_states, 1, i);
+        % Plot the state data for Xout1 and Xout2
+        plot(Tout(1:length(Phi_pred)), Phi_pred(:, i), '-*',  'DisplayName', 'predicted'); hold on;
+        plot(Tout(1:length(Phi_exact)), Phi_exact(:, i), '--*', 'DisplayName', 'exact'); hold on;
+        
+        % Set labels and legend
+        xlabel('time (s)', 'Interpreter', 'latex');
+        ylabel(['Eigfn ', num2str(i)], 'Interpreter', 'latex');  % Generic label for each state
+        legend('Interpreter', 'latex');
+        grid on;
+    end
 end
