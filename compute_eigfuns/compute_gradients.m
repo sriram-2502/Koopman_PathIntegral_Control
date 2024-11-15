@@ -8,6 +8,8 @@ function grad_phi_x_op = compute_gradients(phi)
 % Outputs:
 % grad_phi_x_op : n_dim x n_dim matrix, each column containing the gradient of
 %                 each phi function at x_op in each dimension
+% NOTE: Transponse grad_phi_x_op to match with W' (linear eig vec
+% transpose)
 
     n_dim = length(phi.phi_x_op);               % Number of dimensions
     grad_phi_x_op = nan(n_dim, n_dim);  % Matrix to store gradients for each phi function
@@ -49,6 +51,8 @@ function grad_phi_x_op = compute_gradients(phi)
         % Store the gradient vector for the current phi function
         grad_phi_x_op(:, func_idx) = grad_phi;
     end
+    %Transponse grad_phi_x_op to match with W'
+    grad_phi_x_op = grad_phi_x_op';
 end
 
 function val = get_nd_value(array, indices)

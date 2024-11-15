@@ -24,7 +24,7 @@ rng(15)
 
 %% setup a random linear system of any dimension
 dynamics        = @dynamics_linear;
-n_states        = 4; 
+n_states        = 3; 
 n_ctrl          = 1; % TODO: check wth n_ctrl > 1
 x_op            = rand(n_states,1);
 x               = sym('x',[n_states;1],'real');
@@ -44,7 +44,6 @@ end
 %% compute path integrals and gradients
 phi             = compute_path_integrals(x_op, dynamics);
 grad_phi_x_op   = compute_gradients(phi);
-grad_phi_x_op   = grad_phi_x_op';
 
 %% verify the gradients is the same as left eigenvectors
 disp('check eigenfunction gradient matches with left eigenvector of A')
@@ -65,8 +64,7 @@ lqr_params_transformed  = get_lqr(A_transformed,B_transformed,Q_transformed,R);
 x_init      = 10*rand(n_states,1);
 dt_sim      = 0.1; 
 t_start     = 0.0;
-t_end       = 5.0;
-max_iter    = floor(t_end/dt_sim);
+t_end       = 10.0;
 x_op1       = x_init';
 x_op2       = x_init';
 t_span      = t_start:dt_sim:t_end;
@@ -116,7 +114,6 @@ for t_sim = t_start:dt_sim:t_end
     phi                         = compute_path_integrals(x_op1', dynamics);
     phi_x_op                    = phi.phi_x_op;
     grad_phi_x_op               = compute_gradients(phi);
-    grad_phi_x_op               = grad_phi_x_op';
     P_riccati_curr              = reshape(P_riccati(iter,:),size(A));
     u1                          = compute_control(lqr_params_transformed,P_riccati_curr, phi_x_op, grad_phi_x_op);
 
