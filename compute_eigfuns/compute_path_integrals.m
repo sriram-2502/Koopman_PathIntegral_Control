@@ -1,6 +1,6 @@
-function phi = setup_path_integrals(x_op, dynamics)
+function phi = compute_path_integrals(x_op, dynamics)
     
-    show_wait_bar   = false;
+    show_wait_bar    = false;
     show_diagnostics = false;
 
     %% setup grid
@@ -69,8 +69,9 @@ function phi = setup_path_integrals(x_op, dynamics)
     end
     if(show_wait_bar)
     % delete progress bar
-        F = findall(0,'type','figure','tag','TMWWaitbar');
-        delete(F);
+        if ishandle(w_bar)  % Ensure the waitbar handle is still valid
+            delete(w_bar);
+        end
     end
 
     %% Reshape phi.phi into cells

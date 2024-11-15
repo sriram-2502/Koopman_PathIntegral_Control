@@ -42,7 +42,7 @@ elseif(all(diag(D) > 0))
 end
 
 %% compute path integrals and gradients
-phi             = setup_path_integrals(x_op1, dynamics);
+phi             = compute_path_integrals(x_op1, dynamics);
 grad_phi_x_op   = compute_gradients(x_op1, phi);
 
 %% verify the gradients is the same as left eigenvectors
@@ -101,11 +101,16 @@ for t_sim = t_start:dt_sim:t_end
     waitbar(t_sim/t_end,p_bar,sprintf(string(t_sim)+'/'+string(t_end) +'s'))
     
     % compute eigfn based control
-    phi                         = setup_path_integrals(x_op1', dynamics);
+    phi                         = compute_path_integrals(x_op1', dynamics);
     phi_x_op                    = phi.phi_x_op;
     grad_phi_x_op               = compute_gradients(x_op1', phi);
     lqr_params.P_riccati_curr   = reshape(P_riccati(iter,:),size(A));
     u1                          = compute_control(sys_info, lqr_params, phi_x_op, grad_phi_x_op);
+
+    if(show_diagnositcs)
+        error = phi_x_op - (W'*x_op2')';
+        phi_error = [phi_error;error];
+    end
 
     % get baseline lqr control
     K  = lqr(A,B,Q,R);
@@ -125,11 +130,6 @@ for t_sim = t_start:dt_sim:t_end
     Xout2 = [Xout2;x_op2];
     Uout1 = [Uout1;u1];
     Uout2 = [Uout2;u2];
-
-    if(show_diagnositcs)
-        phi_error = phi_x_op - (W'*x_op2')';
-        phi_error = [phi_error;phi_error];
-    end
 
 end
 
