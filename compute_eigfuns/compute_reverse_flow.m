@@ -22,7 +22,7 @@ function phi_reverse = compute_reverse_time(x_local, x_eqb, dynamics, D, W, sys_
     %% open loop simualtion
     t_start = 0;
     dt_sim  = 0.1;
-    t_end   = 10;
+    t_end   = 2;
     Xout    = x_local';
     Tout    = 0;
     for t_sim = t_start:dt_sim:t_end
