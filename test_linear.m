@@ -39,9 +39,9 @@ W               = sys_info.eig_vectors;
 D               = sys_info.eig_vals; %TODO: check if order matters
 
 % check forward/reverse time path integral
-if(all(round(diag(D)) <= 0))
+if(all(ceil(diag(D)) <= 0))
     disp('---- using forward time path integrals -----')
-elseif(all(round(diag(D)) > 0))
+elseif(all(ceil(diag(D)) > 0))
     disp('---- using reverse time path integrals -----')
 end
 
@@ -122,11 +122,11 @@ for t_sim = t_start:dt_sim:t_end
     waitbar(t_sim/t_end,p_bar,sprintf(string(t_sim)+'/'+string(t_end) +'s'))
     
     % ------ compute eigfn based control ------
-    phi                         = compute_path_integrals(x_op1', dynamics, sys_params);
-    phi_x_op                    = phi.phi_x_op;
-    grad_phi_x_op               = compute_gradients(phi);
-    P_riccati_curr              = reshape(P_riccati(iter,:),size(A));
-    u1                          = compute_control(lqr_params_transformed,P_riccati_curr, phi_x_op, []);
+    phi             = compute_path_integrals(x_op1', dynamics, sys_params);
+    phi_x_op        = phi.phi_x_op;
+    grad_phi_x_op   = compute_gradients(phi);
+    P_riccati_curr  = reshape(P_riccati(iter,:),size(A));
+    u1              = compute_control(lqr_params_transformed,P_riccati_curr, phi_x_op, []);
 
     if(show_diagnositcs)
         phi_exact = (W'*x_op1')';
@@ -139,15 +139,14 @@ for t_sim = t_start:dt_sim:t_end
     end
 
     % ------ get baseline lqr control ------
-    [K,P,e] = lqr(A,B,Q,R);
-    u2 = -inv(R)*B'*P*x_op2';
+    u2 = -inv(R)*B'*lqr_params.P_lqr*x_op2';
 
     % ------ simulate the system ------
     use_reverse = false; % do forward simulation for control loop
-    x_next1 = rk4(dynamics,dt_sim,x_op1',u1,use_reverse,sys_params);
-    x_next2 = rk4(dynamics,dt_sim,x_op2',u2,use_reverse,sys_params);
+    x_next1     = euler(dynamics,dt_sim,x_op1',u1,use_reverse,sys_params);
+    x_next2     = euler(dynamics,dt_sim,x_op2',u2,use_reverse,sys_params);
   
-    % ------ update states ------
+    % ------ update states ------W
     x_op1 = x_next1';
     x_op2 = x_next2';
     iter  = iter + 1;

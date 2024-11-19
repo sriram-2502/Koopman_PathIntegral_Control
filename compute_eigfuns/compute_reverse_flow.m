@@ -1,4 +1,4 @@
-function phi_reverse = compute_reverse_time(x_local, x_eqb, dynamics, D, W, sys_params)
+function phi_reverse = compute_reverse_flow(x_local, x_eqb, dynamics, D, W, sys_params)
     
     % parse inputs
     n_dim           = length(x_eqb);
@@ -14,7 +14,7 @@ function phi_reverse = compute_reverse_time(x_local, x_eqb, dynamics, D, W, sys_
     end
 
      % make sure all eigvals are negative
-     if(any(round(diag(D))<0))
+     if(any(ceil(diag(D))<0))
          disp('eigvals are positive!! cannot use reverse_time')
          return
      end

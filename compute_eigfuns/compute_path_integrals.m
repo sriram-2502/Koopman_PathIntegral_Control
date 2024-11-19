@@ -38,7 +38,7 @@ function phi = compute_path_integrals(x_op, dynamics, sys_params)
         x_local = grid_points(idx,:)';
 
         % compute path integral at that point
-        if(all(round(diag(D)) <= 0))
+        if(all(ceil(diag(D)) <= 0))
             phi_forward = compute_forward_flow(x_local, x_eqb, dynamics, D, W, sys_params);
             phi_complete(idx, 1:n_dim)   = phi_forward.phi(:)';
             phi_linear(idx, 1:n_dim)     = phi_forward.phi_linear(:)';
@@ -53,7 +53,7 @@ function phi = compute_path_integrals(x_op, dynamics, sys_params)
                 phi_x_op(1:n_dim) = phi_forward.phi(:)';
             end
 
-        elseif(all(round(diag(D)) > 0))
+        elseif(all(ceil(diag(D)) > 0))
             phi_reverse = compute_reverse_flow(x_local, x_eqb, dynamics, D, W, sys_params);
             phi_complete(idx, 1:n_dim)   = phi_reverse.phi(:)';
             phi_linear(idx, 1:n_dim)     = phi_reverse.phi_linear(:)';

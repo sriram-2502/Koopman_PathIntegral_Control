@@ -19,9 +19,9 @@ else
 end
 
     %% Compute dxdt
-    rng(101)
+    rng(204)
     A = rand(n_dim);
-    B = eye(n_dim,1); % TODO: check this to make [0 0 ... 1]
+    B = eye(n_dim,1); % TODO: check this to make [0 0 ... 1]?
     n = length(x);
     if(~rank(ctrb(A,B))==n)
         disp('!!! system not controllable. try again')
@@ -29,7 +29,8 @@ end
     end
    
     % define locally stable system
-    K_poles_stable  = place(A,B,-(1:n_dim));
+    eig_vals_stable = -10*abs(rand(1,n_dim));
+    K_poles_stable  = place(A,B,eig_vals_stable);
     A_stable        = A-B*K_poles_stable;
     if(~rank(ctrb(A_stable,B))==n)
         disp('!!! locally stable system not controllable. try again')
@@ -37,7 +38,8 @@ end
     end
 
     % define locally unstable system
-    K_poles_unstbale = place(A,B,1:n_dim);
+    eig_vals_unstable = 10*abs(rand(1,n_dim));
+    K_poles_unstbale = place(A,B,eig_vals_unstable);
     A_unstable       = A-B*K_poles_unstbale;
     if(~rank(ctrb(A_unstable,B))==n)
         disp('!!! locally unstable system not controllable. try again')
