@@ -4,7 +4,7 @@ function phi_reverse = compute_reverse_time(x_local, x_eqb, dynamics, D, W, sys_
     n_dim           = length(x_eqb);
     [~,sys_info]    = dynamics(x_local,0,sys_params);
     A_unstable      = sys_info.A_unstable;
-    dynamics_linear = @(x,u)A_unstable*x;
+    dynamics_linear = @(x,u,sys_params)A_unstable*x;
 
      % check for reverse time
     if(sys_info.use_unstable)
@@ -28,12 +28,12 @@ function phi_reverse = compute_reverse_time(x_local, x_eqb, dynamics, D, W, sys_
     for t_sim = t_start:dt_sim:t_end
 
         % forward simulate using rk4 with no control
-        x_next_full   = euler(dynamics,dt_sim,x_local,0,use_reverse);
-        x_next_linear = euler(dynamics_linear,dt_sim,x_local,0,use_reverse);
+        x_next_full   = euler(dynamics,dt_sim,x_local,0,use_reverse, sys_params);
+        x_next_linear = euler(dynamics_linear,dt_sim,x_local,0,use_reverse,sys_params);
 
         % shift eqb point
-        x_next_full   = x_eqb - x_next_full;
-        x_next_linear = x_eqb - x_next_linear;
+        x_next_full   = x_next_full   - x_eqb;
+        x_next_linear = x_next_linear - x_eqb;
 
         % get nonlinear part only
         x_next = x_next_full' - x_next_linear';

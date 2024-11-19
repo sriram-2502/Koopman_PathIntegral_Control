@@ -73,7 +73,7 @@ lqr_params_transformed  = get_lqr(A_transformed,B_transformed,Q_transformed,R);
 
 %% simulation loop
 x_init      = 10*rand(n_states,1);
-dt_sim      = 0.01; 
+dt_sim      = 0.1; 
 t_start     = 0.0;
 t_end       = 5.0;
 x_op1       = x_init';
@@ -144,8 +144,8 @@ for t_sim = t_start:dt_sim:t_end
 
     % ------ simulate the system ------
     use_reverse = false; % do forward simulation for control loop
-    x_next1 = rk4(dynamics,dt_sim,x_op1',u1,use_reverse);
-    x_next2 = rk4(dynamics,dt_sim,x_op2',u2,use_reverse);
+    x_next1 = rk4(dynamics,dt_sim,x_op1',u1,use_reverse,sys_params);
+    x_next2 = rk4(dynamics,dt_sim,x_op2',u2,use_reverse,sys_params);
   
     % ------ update states ------
     x_op1 = x_next1';

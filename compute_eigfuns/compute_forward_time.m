@@ -4,7 +4,7 @@ function phi_forward = compute_forward_time(x_local, x_eqb, dynamics, D, W, sys_
     n_dim               = length(x_eqb);
     [~,sys_info]        = dynamics(x_local,0, sys_params);
     A_stable            = sys_info.A_stable;
-    dynamics_linearized = @(x,u) A_stable*x;
+    dynamics_linearized = @(x,u,sys_params) A_stable*x;
     
     % check for reverse time
     if(sys_info.use_unstable)
@@ -28,8 +28,8 @@ function phi_forward = compute_forward_time(x_local, x_eqb, dynamics, D, W, sys_
     for t_sim = t_start:dt_sim:t_end
 
         % forward simulate using rk4 with no control
-        x_next_full   = euler(dynamics,dt_sim,x_local,0,use_reverse);
-        x_next_linear = euler(dynamics_linearized,dt_sim,x_local,0,use_reverse);
+        x_next_full   = euler(dynamics,dt_sim,x_local,0,use_reverse,sys_params);
+        x_next_linear = euler(dynamics_linearized,dt_sim,x_local,0,use_reverse,sys_params);
 
         % shift eqb point
         x_next_full   = x_next_full   - x_eqb;

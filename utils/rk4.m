@@ -1,4 +1,4 @@
-function x_next = rk4(dynamics, dt_sim, x_op, u, use_reverse)
+function x_next = rk4(dynamics, dt_sim, x_op, u, use_reverse, sys_params)
     % Runge-Kutta 4th Order (RK4) integration method
     % Inputs:
     %   dynamics - function handle for system dynamics, returning dxdt
@@ -11,17 +11,17 @@ function x_next = rk4(dynamics, dt_sim, x_op, u, use_reverse)
 
     % Calculate the four increments (k1, k2, k3, k4)
     if(use_reverse)
-        k1 = -dynamics(x_op, u);
-        k2 = -dynamics(x_op + 0.5 * dt_sim * k1, u);
-        k3 = -dynamics(x_op + 0.5 * dt_sim * k2, u);
-        k4 = -dynamics(x_op + dt_sim * k3, u);
+        k1 = -dynamics(x_op, u, sys_params);
+        k2 = -dynamics(x_op + 0.5 * dt_sim * k1, u, sys_params);
+        k3 = -dynamics(x_op + 0.5 * dt_sim * k2, u, sys_params);
+        k4 = -dynamics(x_op + dt_sim * k3, u, sys_params);
         % Compute the next state
         x_next = x_op + (dt_sim / 6) * (k1 + 2*k2 + 2*k3 + k4);
     else
-        k1 = dynamics(x_op, u);
-        k2 = dynamics(x_op + 0.5 * dt_sim * k1, u);
-        k3 = dynamics(x_op + 0.5 * dt_sim * k2, u);
-        k4 = dynamics(x_op + dt_sim * k3, u);
+        k1 = dynamics(x_op, u, sys_params);
+        k2 = dynamics(x_op + 0.5 * dt_sim * k1, u, sys_params);
+        k3 = dynamics(x_op + 0.5 * dt_sim * k2, u, sys_params);
+        k4 = dynamics(x_op + dt_sim * k3, u, sys_params);
         % Compute the next state
         x_next = x_op + (dt_sim / 6) * (k1 + 2*k2 + 2*k3 + k4);
     end        
