@@ -20,8 +20,8 @@ wrap_theta          = true;
 show_diagnositcs    = true;
 
 % setup stable or unstable system
-sys_params.use_stable   = true;
-sys_params.use_unstable = false;
+sys_params.use_stable   = false;
+sys_params.use_unstable = true;
 
 % fix seed
 rng(15)
@@ -53,7 +53,7 @@ elseif(sys_info.use_unstable)
 end
 
 %% compute path integrals and gradients
-phi             = compute_path_integrals(x_op, dynamics);
+phi             = compute_path_integrals(x_op, dynamics, sys_params);
 grad_phi_x_op   = compute_gradients(phi);
 
 %% verify the gradients is the same as left eigenvectors
@@ -73,7 +73,7 @@ lqr_params_transformed  = get_lqr(A_transformed,B_transformed,Q_transformed,R);
 
 %% simulation loop
 x_init      = 10*rand(n_states,1);
-dt_sim      = 0.1; 
+dt_sim      = 0.01; 
 t_start     = 0.0;
 t_end       = 5.0;
 x_op1       = x_init';
@@ -122,7 +122,7 @@ for t_sim = t_start:dt_sim:t_end
     waitbar(t_sim/t_end,p_bar,sprintf(string(t_sim)+'/'+string(t_end) +'s'))
     
     % ------ compute eigfn based control ------
-    phi                         = compute_path_integrals(x_op1', dynamics);
+    phi                         = compute_path_integrals(x_op1', dynamics, sys_params);
     phi_x_op                    = phi.phi_x_op;
     grad_phi_x_op               = compute_gradients(phi);
     P_riccati_curr              = reshape(P_riccati(iter,:),size(A));

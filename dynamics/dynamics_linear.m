@@ -30,7 +30,7 @@ end
     end
    
     % define locally stable system
-    K_poles_stable  = place(A,B,1:n_dim);
+    K_poles_stable  = place(A,B,-(1:n_dim));
     A_stable        = A-B*K_poles_stable;
 
     % define locally unstable system

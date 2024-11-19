@@ -1,16 +1,16 @@
-function phi_reverse = compute_reverse_time(x_local, x_eqb, dynamics, D, W)
+function phi_reverse = compute_reverse_time(x_local, x_eqb, dynamics, D, W, sys_params)
     
     % parse inputs
     n_dim           = length(x_eqb);
-    [~,sys_info]    = dynamics(x_local,0);
+    [~,sys_info]    = dynamics(x_local,0,sys_params);
     A_unstable      = sys_info.A_unstable;
     dynamics_linear = @(x,u)A_unstable*x;
 
      % check for reverse time
     if(sys_info.use_unstable)
-        use_reverse = false; 
+        use_reverse = true; 
     elseif(sys_info.use_stable)
-        use_reverse = true;
+        use_reverse = false;
     end
 
      % make sure all eigvals are negative
@@ -53,13 +53,13 @@ function phi_reverse = compute_reverse_time(x_local, x_eqb, dynamics, D, W)
         w       = W(:,i);
 
         % compute path integral
-        integrand = exp(-Tout*lambda).*(w'*Xout')';
+        integrand = exp(Tout*lambda).*(w'*Xout')';
         phi_nonlinear{i} = trapz(Tout,integrand,1);
         phi_linear{i} = w'*x_local;
         phi{i} = phi_linear{i}  + phi_nonlinear{i};
     
         % check for convergence (use abs value)
-        abs_integrand = exp(-Tout*lambda).*abs(Xout);
+        abs_integrand = exp(Tout*lambda).*abs(Xout);
         integrand_nonlinear{i} = abs_integrand(end);
     end
 

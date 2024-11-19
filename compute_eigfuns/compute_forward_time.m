@@ -1,8 +1,8 @@
-function phi_forward = compute_forward_time(x_local, x_eqb, dynamics, D, W)
+function phi_forward = compute_forward_time(x_local, x_eqb, dynamics, D, W, sys_params)
     
     % parse inputs
     n_dim               = length(x_eqb);
-    [~,sys_info]        = dynamics(x_local,0);
+    [~,sys_info]        = dynamics(x_local,0, sys_params);
     A_stable            = sys_info.A_stable;
     dynamics_linearized = @(x,u) A_stable*x;
     

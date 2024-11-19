@@ -1,10 +1,10 @@
-function phi = compute_path_integrals(x_op, dynamics)
+function phi = compute_path_integrals(x_op, dynamics, sys_params)
     
     show_wait_bar    = false;
     show_diagnostics = false;
     
     % parse info
-    [~, sys_info]   = dynamics(x_op, 0);
+    [~, sys_info]   = dynamics(x_op, 0, sys_params);
     D               = sys_info.eig_vals;
     W               = sys_info.eig_vectors;
     x_eqb           = sys_info.x_eqb;
@@ -39,7 +39,7 @@ function phi = compute_path_integrals(x_op, dynamics)
 
         % compute path integral at that point
         if(all(round(diag(D)) <= 0))
-            phi_forward = compute_forward_time(x_local, x_eqb, dynamics, D, W);
+            phi_forward = compute_forward_time(x_local, x_eqb, dynamics, D, W, sys_params);
             phi_complete(idx, 1:n_dim)   = phi_forward.phi(:)';
             phi_linear(idx, 1:n_dim)     = phi_forward.phi_linear(:)';
             phi_nonlinear(idx, 1:n_dim)  = phi_forward.phi_nonlinear(:)';
@@ -54,7 +54,7 @@ function phi = compute_path_integrals(x_op, dynamics)
             end
 
         elseif(all(round(diag(D)) > 0))
-            phi_reverse = compute_reverse_time(x_local, x_eqb, dynamics, D, W);
+            phi_reverse = compute_reverse_time(x_local, x_eqb, dynamics, D, W, sys_params);
             phi_complete(idx, 1:n_dim)   = phi_reverse.phi(:)';
             phi_linear(idx, 1:n_dim)     = phi_reverse.phi_linear(:)';
             phi_nonlinear(idx, 1:n_dim)  = phi_reverse.phi_nonlinear(:)';
