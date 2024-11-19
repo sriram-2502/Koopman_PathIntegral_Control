@@ -2,6 +2,12 @@ function phi = compute_path_integrals(x_op, dynamics)
     
     show_wait_bar    = false;
     show_diagnostics = false;
+    
+    % parse info
+    [~, sys_info]   = dynamics(x_op, 0);
+    D               = sys_info.eig_vals;
+    W               = sys_info.eig_vectors;
+    x_eqb           = sys_info.x_eqb;
 
     %% setup grid
     [local_grid, local_axes] = setup_local_grid(x_op);
@@ -11,13 +17,7 @@ function phi = compute_path_integrals(x_op, dynamics)
     % Flatten each grid into a column and concatenate into a matrix of points
     grid_points = cellfun(@(grid) grid(:), local_grid, 'UniformOutput', false);
     grid_points = [grid_points{:}];  % Concatenate into a single matrix
-
-    %% check for stable, anti-stable or saddle
-    [~, sys_info]   = dynamics(x_op, 0);
-    D               = sys_info.eig_vals;
-    W               = sys_info.eig_vectors;
-    x_eqb           = sys_info.x_eqb;
-
+    
     %% Local path integral computation
     % Initialize arrays to store computed values
     phi_complete  = nan(num_elements, n_dim);
@@ -38,7 +38,7 @@ function phi = compute_path_integrals(x_op, dynamics)
         x_local = grid_points(idx,:)';
 
         % compute path integral at that point
-        if(all(diag(D) < 0))
+        if(all(round(diag(D)) <= 0))
             phi_forward = compute_forward_time(x_local, x_eqb, dynamics, D, W);
             phi_complete(idx, 1:n_dim)   = phi_forward.phi(:)';
             phi_linear(idx, 1:n_dim)     = phi_forward.phi_linear(:)';
@@ -53,7 +53,7 @@ function phi = compute_path_integrals(x_op, dynamics)
                 phi_x_op(1:n_dim) = phi_forward.phi(:)';
             end
 
-        elseif(all(diag(D) > 0))
+        elseif(all(round(diag(D)) > 0))
             phi_reverse = compute_reverse_time(x_local, x_eqb, dynamics, D, W);
             phi_complete(idx, 1:n_dim)   = phi_reverse.phi(:)';
             phi_linear(idx, 1:n_dim)     = phi_reverse.phi_linear(:)';
@@ -62,7 +62,9 @@ function phi = compute_path_integrals(x_op, dynamics)
 
             % Extract values for current operating point
             if(norm(x_local - x_op) <= 1e-3)
-                disp('----- computing eig_fun at x_op -----')
+                if(show_diagnostics)
+                    disp('----- computing eig_fun at x_op -----')
+                end
                 phi_x_op(1:n_dim) = phi_reverse.phi(:)';
             end
         end

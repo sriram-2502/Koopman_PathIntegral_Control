@@ -1,15 +1,22 @@
 function phi_forward = compute_forward_time(x_local, x_eqb, dynamics, D, W)
     
     % parse inputs
-    n_dim = length(x_eqb);
-    [~,sys_info] = dynamics(x_local,0);
-    A_stable = sys_info.A_stable;
+    n_dim               = length(x_eqb);
+    [~,sys_info]        = dynamics(x_local,0);
+    A_stable            = sys_info.A_stable;
     dynamics_linearized = @(x,u) A_stable*x;
+    
+    % check for reverse time
+    if(sys_info.use_unstable)
+        use_reverse = false; 
+    elseif(sys_info.use_stable)
+        use_reverse = true;
+    end
 
     % make sure all eigvals are positive
-     if(any(diag(D)>0))
+     if(any(round(diag(D))>0))
          disp('eigvals are negative!! cannot use forward_time')
-         exit
+         return
      end
 
     %% open loop simualtion
@@ -21,8 +28,8 @@ function phi_forward = compute_forward_time(x_local, x_eqb, dynamics, D, W)
     for t_sim = t_start:dt_sim:t_end
 
         % forward simulate using rk4 with no control
-        x_next_full   = euler(dynamics,dt_sim,x_local,0);
-        x_next_linear = euler(dynamics_linearized,dt_sim,x_local,0);
+        x_next_full   = euler(dynamics,dt_sim,x_local,0,use_reverse);
+        x_next_linear = euler(dynamics_linearized,dt_sim,x_local,0,use_reverse);
 
         % shift eqb point
         x_next_full   = x_next_full   - x_eqb;

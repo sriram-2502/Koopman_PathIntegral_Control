@@ -19,26 +19,37 @@ show_animation      = true;
 wrap_theta          = true;
 show_diagnositcs    = true;
 
+% setup stable or unstable system
+sys_params.use_stable   = true;
+sys_params.use_unstable = false;
+
 % fix seed
 rng(15)
 
 %% setup a random linear system of any dimension
 dynamics        = @dynamics_linear;
-n_states        = 4; 
+n_states        = 3; 
 n_ctrl          = 1; % TODO: check wth n_ctrl > 1
 x_op            = rand(n_states,1);
 x               = sym('x',[n_states;1],'real');
 u               = sym('x',[n_ctrl;1],'real');
-[f,sys_info]    = dynamics(x, u);
-A               = sys_info.A_stable;
+[f,sys_info]    = dynamics(x, u, sys_params);
 B               = sys_info.B;
 W               = sys_info.eig_vectors;
 D               = sys_info.eig_vals; %TODO: check if order matters
 
-if(all(diag(D) < 0))
+% check forward/reverse time path integral
+if(all(round(diag(D)) <= 0))
     disp('---- using forward time path integrals -----')
-elseif(all(diag(D) > 0))
+elseif(all(round(diag(D)) > 0))
     disp('---- using reverse time path integrals -----')
+end
+
+% get A corresponding to stable or unstable system
+if(sys_info.use_stable)
+    A = sys_info.A_stable;
+elseif(sys_info.use_unstable)
+    A = sys_info.A_unstable;
 end
 
 %% compute path integrals and gradients
@@ -64,7 +75,7 @@ lqr_params_transformed  = get_lqr(A_transformed,B_transformed,Q_transformed,R);
 x_init      = 10*rand(n_states,1);
 dt_sim      = 0.1; 
 t_start     = 0.0;
-t_end       = 10.0;
+t_end       = 5.0;
 x_op1       = x_init';
 x_op2       = x_init';
 t_span      = t_start:dt_sim:t_end;
@@ -132,8 +143,9 @@ for t_sim = t_start:dt_sim:t_end
     u2 = -inv(R)*B'*P*x_op2';
 
     % ------ simulate the system ------
-    x_next1 = rk4(dynamics,dt_sim,x_op1',u1);
-    x_next2 = rk4(dynamics,dt_sim,x_op2',u2);
+    use_reverse = false; % do forward simulation for control loop
+    x_next1 = rk4(dynamics,dt_sim,x_op1',u1,use_reverse);
+    x_next2 = rk4(dynamics,dt_sim,x_op2',u2,use_reverse);
   
     % ------ update states ------
     x_op1 = x_next1';
