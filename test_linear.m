@@ -20,15 +20,15 @@ wrap_theta          = true;
 show_diagnositcs    = true;
 
 % setup stable or unstable system
-sys_params.use_stable   = true; % use forward flow
-sys_params.use_unstable = false; % use reverse flow
+sys_params.use_stable   = false; % use forward flow
+sys_params.use_unstable = true; % use reverse flow
 
 % fix seed
 rng(15)
 
 %% setup a random linear system of any dimension
 dynamics        = @dynamics_linear;
-n_states        = 3; 
+n_states        = 4; 
 n_ctrl          = 1; % TODO: check wth n_ctrl > 1
 x_op            = rand(n_states,1);
 x               = sym('x',[n_states;1],'real');
@@ -126,7 +126,7 @@ for t_sim = t_start:dt_sim:t_end
     phi_x_op                    = phi.phi_x_op;
     grad_phi_x_op               = compute_gradients(phi);
     P_riccati_curr              = reshape(P_riccati(iter,:),size(A));
-    u1                          = compute_control(lqr_params_transformed,P_riccati_curr, phi_x_op, grad_phi_x_op);
+    u1                          = compute_control(lqr_params_transformed,P_riccati_curr, phi_x_op, []);
 
     if(show_diagnositcs)
         phi_exact = (W'*x_op1')';
