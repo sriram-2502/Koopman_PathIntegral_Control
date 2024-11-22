@@ -1,10 +1,18 @@
-function [dxdt, sys_info] = dynamics_cart_pole(x, u)
+function [dxdt, sys_info] = dynamics_cart_pole(x, u, sys_params)
 % input
 % x - states (pos, angle, vel, ang vel)
 % u - control
 %
 % outputs
 % sys info (struct)
+
+if(nargin<=2)
+    use_stable   = true;
+    use_unstable = false;
+else
+    use_stable   = sys_params.use_stable;
+    use_unstable = sys_params.use_unstable;
+end
 
 % init output struct
 sys_info = struct();
@@ -37,7 +45,7 @@ alpha_a = ((m^2)*(l^2)*((sin(theta))^2)+ M*m*l^2 +(M+m)*I);
 x_ddot  = (b*m*l*theta_dot*cos(theta) + (m^2)*(l^2)*g*sin(theta)*cos(theta) + (I + m*(l^2))*(F-c*x_dot+ m*l*sin(theta)*theta_dot^2) )/alpha_a;
 theta_ddot = -(F*m*l*cos(theta)-c*m*l*x_dot*cos(theta) + (m^2)*(l^2)*(theta_dot^2)*sin(theta)*cos(theta)+ (M+m)*(b*theta_dot + m*g*l*sin(theta)))/alpha_a;
 
-dxdt = [x_ddot; theta_ddot];
+dxdt = [x_dot; theta_dot; x_ddot; theta_ddot];
 sys_info.dxdt = dxdt;
 
 %% calculate linearization
@@ -64,13 +72,21 @@ sys_info.eig_vectors = W;
 sys_info.x_eqb       = [0; pi; 0; 0];
 
 %% define locally stable system
-K_poles = place(A,B,[-1;-2;-3;-4]);
-A_stable = A-B*K_poles;
-sys_info.A_stable = A_stable;
+K_poles              = place(A,B,[-1;-2;-3;-4]);
+A_stable             = A-B*K_poles;
+sys_info.A_stable    = A_stable;
 
-[~,D,W] = eig(A_stable);
-sys_info.eig_vals    = D;
-sys_info.eig_vectors = W;
+if(use_stable)
+    [~,D,W]              = eig(A_stable);
+    sys_info.eig_vals    = D;
+    sys_info.eig_vectors = W;
+else
+    % saddle?
+    [~,D,W] = eig(A);
+    sys_info.eig_vals    = D;
+    sys_info.eig_vectors = W;
+end
+
 
 %% setup params for energy shaping
 % Total energy
@@ -99,6 +115,10 @@ sys_info.c  = c;
 % params for swing up control
 sys_info.n       = 3;
 sys_info.k_swing = 1.2;
+
+% setup local control
+sys_info.use_stable     = use_stable;
+sys_info.use_unstable   = use_unstable;
 
 
 

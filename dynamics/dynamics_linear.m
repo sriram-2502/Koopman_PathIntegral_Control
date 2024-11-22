@@ -19,7 +19,7 @@ else
 end
 
     %% Compute dxdt
-    rng(204)
+    rng(102)
     A = rand(n_dim);
     B = eye(n_dim,1); % TODO: check this to make [0 0 ... 1]?
     n = length(x);
