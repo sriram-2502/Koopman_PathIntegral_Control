@@ -11,30 +11,58 @@ addpath('dynamics')
 addpath('baseline_control')
 addpath('eigfun_control')
 addpath('compute_eigfuns')
-addpath('solve_riccati')
 addpath('utils')
 addpath('animations')
 
 % setup params
-show_animation = true;
-wrap_theta = true;
-show_diagnositcs = true;
+show_animation      = true;
+wrap_theta          = true;
+show_diagnositcs    = true;
 
-%% load dynamics
+% setup stable or unstable system
+sys_params.use_stable   = true; % use forward flow
+sys_params.use_unstable = false; % use reverse flow
+
+% fix seed
+rng(15)
+
+%% setup a random linear system of any dimension
+dynamics        = @dynamics_cart_pole;
 n_states        = 4; 
-n_ctrl          = 1;
+n_ctrl          = 1; % TODO: check wth n_ctrl > 1
+x_op            = rand(n_states,1);
 x               = sym('x',[n_states;1],'real');
-u              = sym('x',[n_ctrl;1],'real');
-[f,sys_info]    = dynamics_cart_pole(x, u);
-A               = sys_info.A;
+u               = sym('x',[n_ctrl;1],'real');
+[f,sys_info]    = dynamics(x, u, sys_params);
 B               = sys_info.B;
 W               = sys_info.eig_vectors;
-D               = sys_info.eig_vals;
+D               = sys_info.eig_vals; %TODO: check if order matters
+
+% check forward/reverse time path integral
+if(all(ceil(diag(D)) <= 0))
+    disp('---- using forward time path integrals -----')
+elseif(all(ceil(diag(D)) > 0))
+    disp('---- using reverse time path integrals -----')
+end
+
+% get A corresponding to stable or unstable system
+if(sys_info.use_stable)
+    A = sys_info.A_stable;
+elseif(sys_info.use_unstable)
+    A = sys_info.A_unstable;
+end
+
 
 %% compute lqr gain
 Q = diag([200 1000 0 0]);
 R  = 0.035;
-lqr_params = get_lqr(sys_info.A,sys_info.B,Q,R);
+lqr_params = get_lqr(A,B,Q,R);
+
+% solving lqr in koopman coordinates
+A_transformed           = D;
+B_transformed           = W'*B;
+Q_transformed           = inv(W)*Q*inv(W');
+lqr_params_transformed  = get_lqr(A_transformed,B_transformed,Q_transformed,R);
 
 %% simulation loop
 x_init      = [0.0 pi-0.1 0.0 0.0]; 
@@ -44,29 +72,33 @@ dt_sim      = 0.01;
 t_start     = 0;
 t_end       = 1;
 max_iter    = floor(t_end/dt_sim);
-x_op        = x_init;
+x_op1       = x_init;
+x_op2       = x_init;
 t_span      = t_start:dt_sim:t_end;
+iter        = 1;
 
 % solve differential riccati
-Q = eye(size(A));
-R = 0.1;
-lqr_params_transformed = get_lqr_transformed(D,W'*B,Q,R);
-[t_riccati,P_riccati] = compute_riccati(sys_info, lqr_params_transformed, t_span);
-P_riccate_cur = reshape(P_riccati(1,:),size(A));
+[t_riccati,P_riccati] = compute_riccati(lqr_params_transformed, t_span);
+P_riccati_curr = reshape(P_riccati(1,:),size(A));
 
 % check P matrices are the same
 if(show_diagnositcs)
-    % solving lqr in koopman coordinates
-    [K_lqr,P_lqr,e] = lqr(D,W'*B,lqr_params_transformed.Q,lqr_params_transformed.R);
-    disp('check if P_lqr matches with P_riccati')
-    P_lqr
-    P_riccate_cur
+    % check P in transformed coordinates for finite vs inf horizon
+    disp('check P in transformed coordinates for finite vs inf horizon')
+    P_infinite = lqr_params_transformed.P_lqr;
+    P_finite   = P_riccati_curr;
+    riccati_error = P_infinite-P_finite
+    
+    % check P in both transformed and orig coordintes for inf horizon
+    disp('Transform P to orig coordinates and check error for inf horizon')
+    [K,P,e] = lqr(A,B,Q,R);
+    P_error = P - W*P_infinite*W'
 end
 
 % logs
 Tout    = t_start;
-Xout1   = x_op; % for baseline controllers and animation
-Xout2   = [x_op(1) pi-x_op(2) x_op(3) x_op(4)]; % shifted coordinates
+Xout1   = [x_op(1) pi-x_op(2) x_op(3) x_op(4)]; % shifted coordinates for path integrals
+Xout2   = x_op; % for baseline controllers and animation
 Uout1   = []; 
 
 % show progress bar
@@ -78,42 +110,48 @@ for t_sim = t_start:dt_sim:t_end
     % udpate progress bar
     iter = ceil(t_sim/t_end)+1;
     waitbar(t_sim/t_end,w_bar,sprintf(string(t_sim)+'/'+string(t_end) +'s'))
+    
+    % ------ compute eigfn based control ------
+    phi             = compute_path_integrals(x_op1', dynamics, sys_params);
+    phi_x_op        = phi.phi_x_op;
+    grad_phi_x_op   = compute_gradients(phi);
+    P_riccati_curr  = reshape(P_riccati(iter,:),size(A));
+    u1              = compute_control(lqr_params_transformed,P_riccati_curr, phi_x_op, grad_phi_x_op);
 
     % get energy based control
-    u1 = get_swing_up_control(@dynamics_cart_pole, lqr_params, x_op, x_desired);
-    
-    % compute eigfn based control
-    phi = setup_path_integrals(x_op, @dynamics_cart_pole);
-    grad_phi = compute_gradients(x_op, phi);
-    P_riccati_curr = reshape(P_riccati(iter,:),size(A));
-    u2 = compute_control(sys_info, lqr_params_transformed, P_riccati_curr, phi, grad_phi);
+    u2 = get_swing_up_control(@dynamics_cart_pole, lqr_params, x_op, x_desired);
 
-    % simulate using rk4
-    x_next = rk4(@dynamics_cart_pole,dt_sim,x_op,0);
+    % simulate the system
+    use_reverse = false; % do forward simulation for control loop
+    x_next1     = euler(dynamics,dt_sim,x_op1',u1,use_reverse,sys_params);
+    x_next2     = euler(dynamics,dt_sim,x_op2',u2,use_reverse,sys_params);
 
     % wrap theta if necessary
     if(wrap_theta)
-        theta = x_next(2);
+        theta = x_next2(2);
         if(abs(theta)<1e-3)
             theta = 0;
         end
         theta = mod(theta,2*pi);
-        x_next_wrapped = [x_next(1) theta x_next(3) x_next(4)];
+        x_next_wrapped = [x_next2(1) theta x_next2(3) x_next2(4)];
     else
-        x_next_wrapped = x_next';
+        x_next_wrapped = x_next2';
     end
 
     % shift eqb point to unstable point
-    x_next_saddle = x_next' - x_eqb;
+    x_next_saddle = x_next1' - x_eqb;
     
-    % update states
-    x_op = x_next';
+    % ------ update states ------
+    x_op1 = x_next1';
+    x_op2 = x_next2';
+    iter  = iter + 1;
 
     % logs 
     Tout  = [Tout;t_sim];
-    Xout1 = [Xout1;x_next_wrapped];
-    Xout2 = [Xout2;x_next_saddle];
+    Xout1 = [Xout1;x_next_saddle];
+    Xout2 = [Xout2;x_next_wrapped'];
     Uout1 = [Uout1;u1];
+    Uout2 = [Uout2;u2];
 
 end
 
