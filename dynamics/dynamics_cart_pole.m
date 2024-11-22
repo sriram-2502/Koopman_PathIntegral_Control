@@ -25,6 +25,7 @@ I   = 0.0007176;   % MOI of Pendulum
 l   = 0.2;         % COM of Pendulum
 g   = 9.81;        % Gravity Constant
 b   = 0.00007892;  % viscous damping at pivot of Pendulum
+% b   = 0.1;  % viscous damping at pivot of Pendulum
 L   = 0.046;       % Motor Inductance
 Rm  = 12.5;        % Motor Resistance
 kb  = 0.031;       % Motor back emf constant
@@ -72,8 +73,8 @@ sys_info.eig_vectors = W;
 sys_info.x_eqb       = [0; pi; 0; 0];
 
 %% define locally stable system
-K_poles              = place(A,B,[-1;-2;-3;-4]);
-A_stable             = A-B*K_poles;
+k_poles              = place(A,B,[-1;-2;-3;-4]);
+A_stable             = A-B*k_poles;
 sys_info.A_stable    = A_stable;
 
 if(use_stable)
@@ -119,6 +120,9 @@ sys_info.k_swing = 1.2;
 % setup local control
 sys_info.use_stable     = use_stable;
 sys_info.use_unstable   = use_unstable;
+
+% local control 
+sys_info.k_poles = k_poles;
 
 
 

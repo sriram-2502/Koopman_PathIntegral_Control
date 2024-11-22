@@ -62,13 +62,13 @@ gradient_error = sys_info.eig_vectors' - grad_phi_x_op
 
 %% compute lqr gain
 Q             = eye(n_states,n_states);
-Q_transformed = inv(W)*Q*inv(W');
 R             = ones(n_ctrl);
 lqr_params    = get_lqr(A,B,Q,R);
 
 % solving lqr in koopman coordinates
 A_transformed           = D;
 B_transformed           = W'*B;
+Q_transformed           = inv(W)*Q*inv(W');
 lqr_params_transformed  = get_lqr(A_transformed,B_transformed,Q_transformed,R);
 
 %% simulation loop
@@ -146,7 +146,7 @@ for t_sim = t_start:dt_sim:t_end
     x_next1     = euler(dynamics,dt_sim,x_op1',u1,use_reverse,sys_params);
     x_next2     = euler(dynamics,dt_sim,x_op2',u2,use_reverse,sys_params);
   
-    % ------ update states ------W
+    % ------ update states ------
     x_op1 = x_next1';
     x_op2 = x_next2';
     iter  = iter + 1;
