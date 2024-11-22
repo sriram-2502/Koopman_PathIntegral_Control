@@ -65,7 +65,7 @@ Q_transformed           = inv(W)*Q*inv(W');
 lqr_params_transformed  = get_lqr(A_transformed,B_transformed,Q_transformed,R);
 
 %% simulation loop
-x_init      = [0.0 0.1 0.0 0.0]; 
+x_init      = [0.0 pi-0.1 0.0 0.0]; 
 x_desired   = [0.0 pi 0.0 0.0];  
 x_eqb       = [0.0 pi 0.0 0.0]; 
 dt_sim      = 0.01; 
@@ -156,17 +156,17 @@ for t_sim = t_start:dt_sim:t_end
 
     % shift eqb point to unstable point
     x_next1p = x_next1' - x_eqb;
-    x_next2p = x_next2' - x_eqb;
+    x_next2p = x_next2';
     
     % update states
-    x_op1 = x_next1';
-    x_op2 = x_next2';
+    x_op1 = x_next1w;
+    x_op2 = x_next2w;
     iter  = iter + 1;
 
     % logs 
     Tout   = [Tout;t_sim];
     Xout1  = [Xout1;x_next1w];
-    Xout2  = [Xout1;x_next2w];
+    Xout2  = [Xout2;x_next2w];
     Xout1p = [Xout1p;x_next1p];
     Xout2p = [Xout2p;x_next2p];
     Uout1  = [Uout1;u1];
@@ -180,7 +180,8 @@ delete(F);
 
 %% animate
 if(show_animation)
-    Xanimate = Xout1;
+    Xanimate = Xout2;
+    Xanimate(:,1) = 0;
     hf = figure(11);
     % hf.WindowState = 'maximized';
     skip_rate  = 10;
