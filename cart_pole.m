@@ -50,11 +50,13 @@ else
 end
 
 %% compute lqr gain
+% baseline for engergy based control
 Q_baseline = diag([200 1000 0 0]);
 R_baseline  = 0.035;
 lqr_params_baseline  = get_lqr(sys_info.A,B,Q_baseline,R_baseline);
 
-Q           = diag([10 10 0 0]);
+% for klqr - path integral based control
+Q           = diag([200 1000 0 0]);
 R           = 0.035;
 lqr_params  = get_lqr(A,B,Q,R);
 
@@ -65,15 +67,15 @@ Q_transformed           = inv(W)*Q*inv(W');
 lqr_params_transformed  = get_lqr(A_transformed,B_transformed,Q_transformed,R);
 
 %% simulation loop
-x_init      = [0.0 pi-0.1 0.0 0.0]; 
+x_init      = [0.0 0.1 0.0 0.0]; 
 x_desired   = [0.0 pi 0.0 0.0];  
 x_eqb       = [0.0 pi 0.0 0.0]; 
 dt_sim      = 0.01; 
 t_start     = 0;
-t_end       = 5;
+t_end       = 10;
 max_iter    = floor(t_end/dt_sim);
-x_op1        = x_init;
-x_op2        = x_init;
+x_op1       = x_init;
+x_op2       = [x_init(1) pi-x_init(2) x_init(3) x_init(4)];
 t_span      = t_start:dt_sim:t_end;
 iter        = 1;
 
@@ -156,7 +158,7 @@ for t_sim = t_start:dt_sim:t_end
 
     % shift eqb point to unstable point
     x_next1p = x_next1' - x_eqb;
-    x_next2p = x_next2';
+    x_next2p = x_next2' - x_eqb;
     
     % update states
     x_op1 = x_next1w;
@@ -181,7 +183,8 @@ delete(F);
 %% animate
 if(show_animation)
     Xanimate = Xout2;
-    Xanimate(:,1) = 0;
+    % Xanimate(:,1) = 0;
+    Xanimate(:,2) = Xanimate(:,2) + pi;
     hf = figure(11);
     % hf.WindowState = 'maximized';
     skip_rate  = 10;
@@ -222,7 +225,7 @@ figure(22);
 % First subplot: x
 subplot(2,2,1)
 plot(Tout, Xout1p(:,1), 'DisplayName', 'baseline'); hold on;
-plot(Tout, Xout2p(:,1),'--', 'DisplayName', 'klqr'); hold on;
+plot(Tout, Xout2p(:,1),'-', 'DisplayName', 'klqr'); hold on;
 xlabel('time (s)', 'Interpreter', 'latex');
 ylabel('position, $x$', 'Interpreter', 'latex');
 legend('Interpreter', 'latex');
@@ -231,7 +234,7 @@ grid on
 % Second subplot: theta
 subplot(2,2,2)
 plot(Tout, Xout1p(:,2), 'DisplayName', 'baseline'); hold on;
-plot(Tout, Xout2p(:,2),'--', 'DisplayName', 'klqr'); hold on;
+plot(Tout, Xout2p(:,2),'-', 'DisplayName', 'klqr'); hold on;
 xlabel('time (s)', 'Interpreter', 'latex');
 ylabel('angle, $\theta$', 'Interpreter', 'latex');
 box on;
@@ -241,7 +244,7 @@ grid on
 % Third subplot: x_dot
 subplot(2,2,3)
 plot(Tout, Xout1p(:,3), 'DisplayName', 'baseline'); hold on;
-plot(Tout, Xout2p(:,3),'--', 'DisplayName', 'klqr'); hold on;
+plot(Tout, Xout2p(:,3),'-', 'DisplayName', 'klqr'); hold on;
 xlabel('time (s)', 'Interpreter', 'latex');
 ylabel('velocity, $\dot{x}$', 'Interpreter', 'latex');
 box on;
@@ -251,7 +254,7 @@ grid
 % Fourth subplot: theta_dot
 subplot(2,2,4)
 plot(Tout, Xout1p(:,4), 'DisplayName', 'baseline'); hold on;
-plot(Tout, Xout2p(:,4),'--', 'DisplayName', 'klqr'); hold on;
+plot(Tout, Xout2p(:,4),'-', 'DisplayName', 'klqr'); hold on;
 xlabel('time (s)', 'Interpreter', 'latex');
 ylabel('angular velocity, $\dot{\theta}$', 'Interpreter', 'latex');
 box on;
@@ -267,7 +270,7 @@ for i = 1:n_ctrl
     
     % Plot the state data for Xout1 and Xout2
     plot(Tout(1:length(Uout1)), Uout1(:, i),  '-*', 'DisplayName', 'baseline'); hold on;
-    plot(Tout(1:length(Uout2)), Uout2(:, i), '--*',  'DisplayName', 'klqr'); hold on;
+    plot(Tout(1:length(Uout2)), Uout2(:, i), '-*',  'DisplayName', 'klqr'); hold on;
     
     % Set labels and legend
     xlabel('time (s)', 'Interpreter', 'latex');

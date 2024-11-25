@@ -43,7 +43,7 @@ lqr_params = get_lqr(A,B,Q,R);
 K_lqr = lqr_params.K_lqr;
 
 %% simulation loop
-x_init      = [0.0 pi-0.1 0.0 0.0]; 
+x_init      = [0.0 0.1 0.0 0.0]; 
 x_desired   = [0.0 pi 0.0 0.0];            
 dt_sim      = 0.01; 
 t_start     = 0;
