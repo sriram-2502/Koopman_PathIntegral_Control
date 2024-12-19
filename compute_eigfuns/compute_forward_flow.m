@@ -9,7 +9,7 @@ function phi_forward = compute_forward_flow(x_local, x_eqb, dynamics, D, W, sys_
     if(sys_info.use_unstable)
         use_reverse = false; 
     elseif(sys_info.use_stable)
-        use_reverse = true;
+        use_reverse = true; % test if it convergeces first!
     end
 
     % make sure all eigvals are positive

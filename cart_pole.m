@@ -24,6 +24,10 @@ show_diagnositcs    = true;
 sys_params.use_stable   = true; % use forward flow
 sys_params.use_unstable = false; % use reverse flow
 
+% note: using stable system and reverse flow works
+% note: tune integration time in reverse_flow.m for this case
+% notw: use 1s or 2s as integration time depending on how far the ic is from upright pos
+
 %% load dynamics
 sys_info = cart_pole_info(sys_params);
 dynamics = @dynamics_cart_pole;
@@ -107,6 +111,7 @@ Xout1p  = [x_op1(1) pi-x_op1(2) x_op1(3) x_op1(4)]; % shifted coordinates
 Xout2p  = [x_op1(1) pi-x_op1(2) x_op1(3) x_op1(4)]; % shifted coordinates
 Uout1   = []; 
 Uout2   = []; 
+convergence = []; % plot this to check convergence criteria
 
 % show progress bar
 w_bar = waitbar(0,'1','Name','running simulation loop...',...
@@ -125,8 +130,13 @@ for t_sim = t_start:dt_sim:t_end
     phi_x_op        = phi.phi_x_op;
     grad_phi_x_op   = compute_gradients(phi);
     P_riccati_curr  = reshape(P_riccati(iter,:),size(A));
+
+    if(show_diagnositcs)
+        convergence = [convergence;phi.phi_integrand_x_op];
+    end
     
-    if (abs(x_desired(2)-x_op2(2)))*(180/pi) <= 30 %
+    if (abs(x_desired(2)-x_op2(2)))*(180/pi) <= 30 
+            %disp('-- switching to lqr ---')
             u_volt = -lqr_params_baseline.K_lqr*(x_op2'-x_desired');
             u_volt = saturate_fun(u_volt,12,-12);
             x_dot  = x_op2(3);
@@ -135,7 +145,7 @@ for t_sim = t_start:dt_sim:t_end
     else
             %disp('-- switching to klqr ---')
             u_volt = compute_control(lqr_params_transformed,P_riccati_curr, phi_x_op, grad_phi_x_op);
-%             u_volt = -sys_info.k_poles*x_op2' + u_volt;
+            u_volt = -sys_info.k_poles*x_op2' + u_volt;
             u_volt = saturate_fun(u_volt,12,-12);
             x_dot  = x_op2(3);
             u_klqr = volts_to_force(x_dot,u_volt);

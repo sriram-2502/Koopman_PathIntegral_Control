@@ -23,7 +23,8 @@ function phi = compute_path_integrals(x_op, dynamics, sys_info)
     phi_linear    = nan(num_elements, n_dim);
     phi_nonlinear = nan(num_elements, n_dim); 
     phi_integrand = nan(num_elements, n_dim); 
-    phi_x_op      = nan(1, n_dim);  
+    phi_x_op           = nan(1, n_dim);  
+    phi_integrand_x_op = nan(1, n_dim); 
     
     % load a progress bar
     if(show_wait_bar)
@@ -49,7 +50,8 @@ function phi = compute_path_integrals(x_op, dynamics, sys_info)
                 if(show_diagnostics)
                     disp('----- computing eig_fun at x_op -----')
                 end
-                phi_x_op(1:n_dim) = phi_forward.phi(:)';
+                phi_x_op(1:n_dim)           = phi_forward.phi(:)';
+                phi_integrand_x_op(1:n_dim) = phi_integrand(idx, 1:n_dim);
             end
 
         elseif(all(ceil(diag(D)) > 0))
@@ -64,7 +66,8 @@ function phi = compute_path_integrals(x_op, dynamics, sys_info)
                 if(show_diagnostics)
                     disp('----- computing eig_fun at x_op -----')
                 end
-                phi_x_op(1:n_dim) = phi_reverse.phi(:)';
+                phi_x_op(1:n_dim)           = phi_reverse.phi(:)';
+                phi_integrand_x_op(1:n_dim) = phi_integrand(idx, 1:n_dim);
             end
         end
     end
@@ -107,5 +110,6 @@ function phi = compute_path_integrals(x_op, dynamics, sys_info)
     phi.phi_integrand   = phi_integrand_cell;
 
     % store eigfun values at the operating point
-    phi.phi_x_op = phi_x_op;
+    phi.phi_x_op           = phi_x_op;
+    phi.phi_integrand_x_op = phi_integrand_x_op;
 end
