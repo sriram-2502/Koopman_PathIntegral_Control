@@ -21,7 +21,7 @@ function phi_forward = compute_forward_flow(x_local, x_eqb, dynamics, D, W, sys_
     %% open loop simualtion
     t_start = 0;
     dt_sim  = 0.01;
-    t_end   = 0.1;
+    t_end   = 1;
     Xout    = x_local';
     Tout    = 0;
     for t_sim = t_start:dt_sim:t_end

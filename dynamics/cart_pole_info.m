@@ -42,16 +42,28 @@ A_damped    = [0.1 0 1 0; 0 0 0 1; 0 aa -bb -cc; 0 dd -ee -ff];
 A_undamped  = [0 0 1 0; 0 0 0 1; 0 aa -bb -cc; 0 dd -ee -ff];
 B           = [0;0; mm; nn]; 
 
-[~,D_damped,W_damped] = eig(A_damped);
+[~,D_damped,W_damped]     = eig(A_damped);
 [~,D_undamped,W_undamped] = eig(A_undamped);
 
 %% define locally stable system
-A = A_damped;
-k_poles           = place(A,B,[-1;-2;-3;-4]);
-A_stable          = A-B*k_poles;
-sys_info.A_stable = A_stable;
+A = A_undamped;
+
+% useling pole placement
+k_poles  = place(A,B,-1*[-1;-2;-3;-4]);
+
+% using lqr (leads to complex eig vals)
+Q     = diag([200 1000 0 0]);
+R     = 0.035;
+k_lqr = lqr(A,B,Q,R);
+
+k = k_poles;
+A_stable = A - B*k;
+sys_info.A_stable   = A_stable;
+sys_info.A_unstable = A_stable;
 
 if(use_stable)
+    [~,D,W] = eig(A_stable);
+elseif(use_unstable)
     [~,D,W] = eig(A_stable);
 else
     % saddle?
@@ -80,7 +92,7 @@ sys_info.A_damped   = A_damped;
 sys_info.D_damped   = D_damped;
 sys_info.W_damped   = W_damped;
 
-% params for swing up control
+% params for swing up control (baseline)
 sys_info.n       = 3;
 sys_info.k_swing = 1.2;
 
@@ -98,3 +110,4 @@ sys_info.use_unstable   = use_unstable;
 
 % local control 
 sys_info.k_poles = k_poles;
+sys_info.k_lqr   = k_lqr;

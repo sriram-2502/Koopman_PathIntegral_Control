@@ -68,6 +68,7 @@ function phi = compute_path_integrals(x_op, dynamics, sys_info)
             end
         end
     end
+
     if(show_wait_bar)
     % delete progress bar
         if ishandle(w_bar)  % Ensure the waitbar handle is still valid

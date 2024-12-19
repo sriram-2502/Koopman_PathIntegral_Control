@@ -69,7 +69,7 @@ Q_transformed           = inv(W)*Q*inv(W');
 lqr_params_transformed  = get_lqr(A_transformed,B_transformed,Q_transformed,R);
 
 %% simulation loop
-x_init      = [0.0 pi-0.1 0.0 0.0]; 
+x_init      = [0.0 pi-pi/4 0.0 0.0]; 
 x_desired   = [0.0 pi 0.0 0.0];  
 x_eqb       = [0.0 pi 0.0 0.0]; 
 dt_sim      = 0.01; 
@@ -125,9 +125,8 @@ for t_sim = t_start:dt_sim:t_end
     phi_x_op        = phi.phi_x_op;
     grad_phi_x_op   = compute_gradients(phi);
     P_riccati_curr  = reshape(P_riccati(iter,:),size(A));
-
+    
     if (abs(x_desired(2)-x_op2(2)))*(180/pi) <= 30 %
-            %disp('-- switching to lqr ---')
             u_volt = -lqr_params_baseline.K_lqr*(x_op2'-x_desired');
             u_volt = saturate_fun(u_volt,12,-12);
             x_dot  = x_op2(3);
@@ -136,8 +135,8 @@ for t_sim = t_start:dt_sim:t_end
     else
             %disp('-- switching to klqr ---')
             u_volt = compute_control(lqr_params_transformed,P_riccati_curr, phi_x_op, grad_phi_x_op);
-            u_volt = -sys_info.k_poles*x_op2' + u_volt;
-            u_volt = saturate_fun(u_volt,20,-20);
+%             u_volt = -sys_info.k_poles*x_op2' + u_volt;
+            u_volt = saturate_fun(u_volt,12,-12);
             x_dot  = x_op2(3);
             u_klqr = volts_to_force(x_dot,u_volt);
             u2     = u_klqr;
@@ -170,7 +169,7 @@ for t_sim = t_start:dt_sim:t_end
 
     % update states
     x_op1 = x_next1w;
-    x_op2 = x_next2';
+    x_op2 = x_next2w;
     iter  = iter + 1;
 
     % logs 
