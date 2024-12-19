@@ -21,22 +21,37 @@ wrap_theta          = true;
 show_diagnositcs    = true;
 
 % setup stable or unstable system
-sys_params.use_stable   = true; % use forward flow
+sys_params.use_stable   = false; % use forward flow
 sys_params.use_unstable = false; % use reverse flow
 
+% add damping to cart
+use_damping = true;
+
 %% load dynamics
-dynamics        = @dynamics_cart_pole;
-n_states        = 4; 
-n_ctrl          = 1;
-x               = sym('x',[n_states;1],'real');
-u               = sym('x',[n_ctrl;1],'real');
-[f,sys_info]    = dynamics_cart_pole(x, u, sys_params);
-A               = sys_info.A;         
-B               = sys_info.B;
-W               = sys_info.eig_vectors;
-D               = sys_info.eig_vals;
+sys_info = cart_pole_info(sys_params);
+dynamics = @dynamics_cart_pole;
+n_states = 4; 
+n_ctrl   = 1;
+x        = sym('x',[n_states;1],'real');
+u        = sym('x',[n_ctrl;1],'real');
+f        = dynamics_cart_pole(x, u, sys_info);
+
+if(use_damping)
+    A = sys_info.A_damped;
+    W = sys_info.W_damped;
+    D = sys_info.D_damped;
+else
+    A = sys_info.A_undamped;
+    W = sys_info.W_undamped;
+    D = sys_info.D_undamped;
+end
+B = sys_info.B;
+
 
 %% compute lqr gain
+% NOTE: swing up from bottom pos only works when damping is zero (b=0) in
+% sys_info setup
+
 Q = diag([200 1000 0 0]);
 R  = 0.035;
 lqr_params = get_lqr(A,B,Q,R);
@@ -66,9 +81,9 @@ for t_sim = t_start:dt_sim:t_end
     waitbar(t_sim/t_end,w_bar,sprintf(string(t_sim)+'/'+string(t_end) +'s'))
 
     % get energy based control
-    u = get_swing_up_control(@dynamics_cart_pole, lqr_params, x_op, x_desired);
+    u = get_swing_up_control(lqr_params, x_op, x_desired);
     use_reverse = false;
-    x_next = rk4(@dynamics_cart_pole,dt_sim,x_op',u,use_reverse, sys_params);
+    x_next = rk4(@dynamics_cart_pole,dt_sim,x_op',u,use_reverse, sys_info);
 
     theta = x_next(2);
     % take theta as (360- theta), when theta < 0, otherwise theta = theta

@@ -25,28 +25,30 @@ sys_params.use_stable   = true; % use forward flow
 sys_params.use_unstable = false; % use reverse flow
 
 %% load dynamics
-dynamics        = @dynamics_cart_pole;
-n_states        = 4; 
-n_ctrl          = 1;
-x               = sym('x',[n_states;1],'real');
-u               = sym('x',[n_ctrl;1],'real');
-[f,sys_info]    = dynamics_cart_pole(x, u, sys_params);
-B               = sys_info.B;
-W               = sys_info.eig_vectors;
-D               = sys_info.eig_vals;
-
-% check forward/reverse time path integral
-if(all(ceil(diag(D)) <= 0))
-    disp('---- using forward time path integrals -----')
-elseif(all(ceil(diag(D)) > 0))
-    disp('---- using reverse time path integrals -----')
-end
+sys_info = cart_pole_info(sys_params);
+dynamics = @dynamics_cart_pole;
+n_states = 4; 
+n_ctrl   = 1;
+x        = sym('x',[n_states;1],'real');
+u        = sym('x',[n_ctrl;1],'real');
+f        = dynamics_cart_pole(x, u, sys_info);
 
 % get A corresponding to stable or unstable system
 if(sys_info.use_stable)
     A = sys_info.A_stable;
 else
     A = sys_info.A;
+end
+
+B = sys_info.B;
+W = sys_info.eig_vectors;
+D = sys_info.eig_vals;
+
+% check forward/reverse time path integral
+if(all(ceil(diag(D)) <= 0))
+    disp('---- using forward time path integrals -----')
+elseif(all(ceil(diag(D)) > 0))
+    disp('---- using reverse time path integrals -----')
 end
 
 %% compute lqr gain
@@ -67,15 +69,15 @@ Q_transformed           = inv(W)*Q*inv(W');
 lqr_params_transformed  = get_lqr(A_transformed,B_transformed,Q_transformed,R);
 
 %% simulation loop
-x_init      = [0.0 0.1 0.0 0.0]; 
+x_init      = [0.0 pi-0.1 0.0 0.0]; 
 x_desired   = [0.0 pi 0.0 0.0];  
 x_eqb       = [0.0 pi 0.0 0.0]; 
 dt_sim      = 0.01; 
 t_start     = 0;
-t_end       = 10;
+t_end       = 5;
 max_iter    = floor(t_end/dt_sim);
 x_op1       = x_init;
-x_op2       = [x_init(1) pi-x_init(2) x_init(3) x_init(4)];
+x_op2       = x_init - x_eqb;
 t_span      = t_start:dt_sim:t_end;
 iter        = 1;
 
@@ -111,31 +113,43 @@ w_bar = waitbar(0,'1','Name','running simulation loop...',...
     'CreateCancelBtn','setappdata(gcbf,''canceling'',1)');
 
 for t_sim = t_start:dt_sim:t_end
-
     % udpate progress bar
-    iter = ceil(t_sim/t_end)+1;
+    
     waitbar(t_sim/t_end,w_bar,sprintf(string(t_sim)+'/'+string(t_end) +'s'))
 
     % get energy based control
-    u1 = get_swing_up_control(@dynamics_cart_pole, lqr_params_baseline, x_op1, x_desired);
+    u1 = get_swing_up_control(lqr_params_baseline, x_op1, x_desired);
     
     % ------ compute eigfn based control ------
-    phi             = compute_path_integrals(x_op2', dynamics, sys_params);
+    phi             = compute_path_integrals(x_op2', dynamics, sys_info);
     phi_x_op        = phi.phi_x_op;
     grad_phi_x_op   = compute_gradients(phi);
     P_riccati_curr  = reshape(P_riccati(iter,:),size(A));
-    u_volt          = compute_control(lqr_params_transformed,P_riccati_curr, phi_x_op, grad_phi_x_op);
-    u_volt          = -sys_info.k_poles*x_op2' + u_volt;
-    u_volt          = saturate_fun(u_volt,12,-12);
-    x_dot           = x_op2(3);
-    u_klqr          = volts_to_force(x_dot,u_volt);
-    u2              = u_klqr;
+
+    if (abs(x_desired(2)-x_op2(2)))*(180/pi) <= 30 %
+            %disp('-- switching to lqr ---')
+            u_volt = -lqr_params_baseline.K_lqr*(x_op2'-x_desired');
+            u_volt = saturate_fun(u_volt,12,-12);
+            x_dot  = x_op2(3);
+            u_lqr  = volts_to_force(x_dot,u_volt);
+            u2     = u_lqr;
+    else
+            %disp('-- switching to klqr ---')
+            u_volt = compute_control(lqr_params_transformed,P_riccati_curr, phi_x_op, grad_phi_x_op);
+            u_volt = -sys_info.k_poles*x_op2' + u_volt;
+            u_volt = saturate_fun(u_volt,20,-20);
+            x_dot  = x_op2(3);
+            u_klqr = volts_to_force(x_dot,u_volt);
+            u2     = u_klqr;
+    end
 
     % simulate
     use_reverse = false;
-    x_next1 = rk4(dynamics,dt_sim,x_op1',u1,use_reverse,sys_params);
-    x_next2 = rk4(dynamics,dt_sim,x_op2',u2,use_reverse,sys_params);
-
+    x_next1 = rk4(dynamics,dt_sim,x_op1',u1,use_reverse,sys_info);
+    x_next2 = rk4(dynamics,dt_sim,x_op2',u2,use_reverse,sys_info);
+    % shift eqb for dynamics
+%     x_next2 = x_next2 - x_eqb';
+    
     % wrap theta if necessary
     if(wrap_theta)
         theta1 = x_next1(2);
@@ -156,13 +170,13 @@ for t_sim = t_start:dt_sim:t_end
         x_next2w = x_next2';
     end
 
-    % shift eqb point to unstable point
+    % shift eqb point for plots
     x_next1p = x_next1' - x_eqb;
     x_next2p = x_next2' - x_eqb;
-    
+
     % update states
     x_op1 = x_next1w;
-    x_op2 = x_next2w;
+    x_op2 = x_next2';
     iter  = iter + 1;
 
     % logs 
@@ -182,9 +196,7 @@ delete(F);
 
 %% animate
 if(show_animation)
-    Xanimate = Xout2;
-    % Xanimate(:,1) = 0;
-    Xanimate(:,2) = Xanimate(:,2) + pi;
+    Xanimate = Xout1;
     hf = figure(11);
     % hf.WindowState = 'maximized';
     skip_rate  = 10;
@@ -260,7 +272,6 @@ ylabel('angular velocity, $\dot{\theta}$', 'Interpreter', 'latex');
 box on;
 legend('Interpreter', 'latex');
 grid
-
 
 figure(33);
 % Loop over each control and create subplots

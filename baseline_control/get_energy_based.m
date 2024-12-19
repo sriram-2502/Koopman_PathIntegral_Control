@@ -1,7 +1,7 @@
-function u_energy = get_energy_based(dynamics, x_op)
+function u_energy = get_energy_based(x_op)
     
     % get system info
-    [~,sys_info] = dynamics(x_op, 0);
+    sys_info = cart_pole_info();
 
     % parse states
     x           = x_op(1);
@@ -10,24 +10,21 @@ function u_energy = get_energy_based(dynamics, x_op)
     theta_dot   = x_op(4);
 
     % prase system params
-    r   = sys_info.r;   % radius of motor shaft
     M   = sys_info.M;   % Mass of cart
     m   = sys_info.m;   % mass of pendulum
     I   = sys_info.I;   % MOI of Pendulum
     l   = sys_info.l;   % COM of Pendulum
     g   = sys_info.g;   % Gravity Constant
     b   = sys_info.b;   % viscous damping at pivot of Pendulum
-    L   = sys_info.L;   % Motor Inductance
-    Rm  = sys_info.Rm;  % Motor Resistance
-    kb  = sys_info.kb;  % Motor back emf constant
-    kt  = sys_info.kt;  % Motor Torque constant
-    c   = sys_info.c;   % friction coefficient of cart
 
-    % parse energy of the system
-    E   = sys_info.E; % total energy
-    Er  = sys_info.Er; % potential energy 
+    %% setup params for energy shaping
+    % Total energy
+    E = m*g*l*(1-cos(theta)) + (1/2)*(I + m*l^2)*(theta_dot^2);
+    
+    % Potential Energy
+    Er  = 2*m*g*l;
 
-    % setup params for swing control
+    %% setup params for swing control
     n       = sys_info.n; 
     k_swing = sys_info.k_swing;
 

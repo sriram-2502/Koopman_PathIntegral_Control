@@ -1,8 +1,7 @@
-function phi_reverse = compute_reverse_flow(x_local, x_eqb, dynamics, D, W, sys_params)
+function phi_reverse = compute_reverse_flow(x_local, x_eqb, dynamics, D, W, sys_info)
     
     % parse inputs
     n_dim           = length(x_eqb);
-    [~,sys_info]    = dynamics(x_local,0,sys_params);
     A_unstable      = sys_info.A_unstable;
     dynamics_linear = @(x,u,sys_params)A_unstable*x;
 
@@ -28,8 +27,8 @@ function phi_reverse = compute_reverse_flow(x_local, x_eqb, dynamics, D, W, sys_
     for t_sim = t_start:dt_sim:t_end
 
         % forward simulate using rk4 with no control
-        x_next_full   = euler(dynamics,dt_sim,x_local,0,use_reverse, sys_params);
-        x_next_linear = euler(dynamics_linear,dt_sim,x_local,0,use_reverse,sys_params);
+        x_next_full   = euler(dynamics,dt_sim,x_local,0,use_reverse, sys_info);
+        x_next_linear = euler(dynamics_linear,dt_sim,x_local,0,use_reverse,sys_info);
 
         % shift eqb point
         x_next_full   = x_next_full   - x_eqb;
