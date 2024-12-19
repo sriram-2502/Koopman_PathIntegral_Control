@@ -1,20 +1,40 @@
-function u = compute_control_with_riccati(x_op, sys_info, lqr_params, phi, grad_phi, t_span_curr)
+function u = compute_control_with_riccati(lqr_params_transformed, sys_info, phi_x_op, grad_phi_x_op, t_span_curr)
+    
+    % check if system is linear or not
+    if(isempty(grad_phi_x_op))
+        use_linear = true;
+    else
+        use_linear = false;
+    end
 
-    % get riccati solution for current time step 
-    A = sys_info.A_koopman;
-    W = sys_info.W;
-    g = W'*sys_info.g(x_op'); % eval g(x) at x_op
-    Q = inv(W')*lqr_params.Q*W';
-    R = lqr_params.R;
+    % parse stuff
+    B = sys_info.B; % TODO: get B as g(x) at x_op
+    D = sys_info.eig_vals;
+    Q = lqr_params_transformed.Q;
+    R = lqr_params_transformed.R;
+    W = grad_phi_x_op; % linearized eig fun at x_op
+    
+    A_transformed           = D;
+    B_transformed           = W'*B;
+    Q_transformed           = inv(W)*Q*inv(W');
+    lqr_params_transformed  = get_lqr(A_transformed,B_transformed,Q_transformed,R);
 
-    [t_riccati,P_riccati] = compute_riccati(sys_info, lqr_params, t_span_curr);
-    P_riccati_curr = reshape(P_riccati(1,:),size(A));
+   % solve riccati at curren time step
+   [t_riccati,P_riccati] = compute_riccati(lqr_params_transformed, t_span_curr);
+   P_riccati_curr = reshape(P_riccati(1,:),size(lqr_params_transformed.A));
 
-    % get eig fun and its grad at current x_op
-    phi = phi.phi_x_op;
-    grad_phi = grad_phi.grad_phi_x_op;
+    % parse system info
+    B = lqr_params_transformed.B; %lienarized version of g(x) in transformed coordinates
+
+    % parse lqr params
+    R = lqr_params_transformed.R;
 
     % get control
-    u = -inv(R)*g'*(phi'*P_riccati_curr*grad_phi)';
+    if(use_linear)
+        % if linear, no need for grad_phi
+        u = -inv(R)*B'*(P_riccati_curr*phi_x_op');
+    else
+        u = -inv(R)*B'*(phi_x_op*P_riccati_curr*grad_phi_x_op)';
+    end
     
 end
