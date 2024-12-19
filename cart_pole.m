@@ -149,8 +149,8 @@ for t_sim = t_start:dt_sim:t_end
             u2     = u_lqr;
     else
             %disp('-- switching to klqr ---')
-            % u_volt = compute_control(lqr_params_transformed,P_riccati_curr, phi_x_op, grad_phi_x_op);
-            u_volt = compute_control_with_riccati(lqr_params_transformed,sys_info,phi_x_op,grad_phi_x_op, t_span_curr, x_op2);
+            u_volt = compute_control(lqr_params_transformed,P_riccati_curr, phi_x_op, grad_phi_x_op);
+            % u_volt = compute_control_with_riccati(lqr_params_transformed,sys_info,phi_x_op,grad_phi_x_op, t_span_curr, x_op2);
             u_volt = -sys_info.k_poles*x_op2' + u_volt;
             u_volt = saturate_fun(u_volt,12,-12);
             x_dot  = x_op2(3);
