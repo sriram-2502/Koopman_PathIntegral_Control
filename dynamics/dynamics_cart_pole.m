@@ -1,4 +1,4 @@
-function [dxdt, sys_info] = dynamics_cart_pole(x, u, sys_info)
+function [dxdt,fx,gx] = dynamics_cart_pole(x, u, sys_info)
 % input
 % x - states (pos, angle, vel, ang vel)
 % u - control
@@ -27,8 +27,17 @@ F = u;
 alpha_a = ((m^2)*(l^2)*((sin(theta))^2)+ M*m*l^2 +(M+m)*I);
 x_ddot  = (b*m*l*theta_dot*cos(theta) + (m^2)*(l^2)*g*sin(theta)*cos(theta) + (I + m*(l^2))*(F-c*x_dot+ m*l*sin(theta)*theta_dot^2) )/alpha_a;
 theta_ddot = -(F*m*l*cos(theta)-c*m*l*x_dot*cos(theta) + (m^2)*(l^2)*(theta_dot^2)*sin(theta)*cos(theta)+ (M+m)*(b*theta_dot + m*g*l*sin(theta)))/alpha_a;
-
 dxdt = [x_dot; theta_dot; x_ddot; theta_ddot];
+
+x_ddot_no_ctrl  = (b*m*l*theta_dot*cos(theta) + (m^2)*(l^2)*g*sin(theta)*cos(theta) + (I + m*(l^2))*(-c*x_dot+ m*l*sin(theta)*theta_dot^2) )/alpha_a;
+theta_ddot_no_ctrl = -(-c*m*l*x_dot*cos(theta) + (m^2)*(l^2)*(theta_dot^2)*sin(theta)*cos(theta)+ (M+m)*(b*theta_dot + m*g*l*sin(theta)))/alpha_a;
+
+fx = [x_dot; theta_dot; x_ddot_no_ctrl; theta_ddot_no_ctrl];
+
+x_ddot_ctrl  =  (I + m*(l^2))/alpha_a;
+theta_ddot_ctrl = -(m*l*cos(theta))/alpha_a;
+
+gx = [0;0;x_ddot_ctrl;theta_ddot_ctrl];
 
 
 

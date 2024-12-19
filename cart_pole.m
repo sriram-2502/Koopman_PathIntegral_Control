@@ -35,7 +35,10 @@ n_states = 4;
 n_ctrl   = 1;
 x        = sym('x',[n_states;1],'real');
 u        = sym('x',[n_ctrl;1],'real');
-f        = dynamics_cart_pole(x, u, sys_info);
+
+[dxdt,fx,gx]        = dynamics_cart_pole(x, u, sys_info);
+sys_info.dynamics_f = matlabFunction(fx,'vars',x);
+sys_info.dynamics_g = matlabFunction(gx,'vars',x);
 
 % get A corresponding to stable or unstable system
 if(sys_info.use_stable)
@@ -122,7 +125,7 @@ for t_sim = t_start:dt_sim:t_end
     waitbar(t_sim/t_end,w_bar,sprintf(string(t_sim)+'/'+string(t_end) +'s'))
 
     % get current time remaining
-    t_span_curr = t_sim:dt_sim:t_end;
+    t_span_curr = t_sim:dt_sim:t_end+dt_sim;
 
     % get energy based control
     u1 = get_swing_up_control(lqr_params_baseline, x_op1, x_desired);
@@ -146,8 +149,8 @@ for t_sim = t_start:dt_sim:t_end
             u2     = u_lqr;
     else
             %disp('-- switching to klqr ---')
-            u_volt = compute_control(lqr_params_transformed,P_riccati_curr, phi_x_op, grad_phi_x_op);
-%             u_volt = compute_control_with_riccati(lqr_params_transformed,sys_info,phi_x_op,grad_phi_x_op, t_span_curr);
+            % u_volt = compute_control(lqr_params_transformed,P_riccati_curr, phi_x_op, grad_phi_x_op);
+            u_volt = compute_control_with_riccati(lqr_params_transformed,sys_info,phi_x_op,grad_phi_x_op, t_span_curr, x_op2);
             u_volt = -sys_info.k_poles*x_op2' + u_volt;
             u_volt = saturate_fun(u_volt,12,-12);
             x_dot  = x_op2(3);

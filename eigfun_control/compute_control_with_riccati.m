@@ -1,4 +1,4 @@
-function u = compute_control_with_riccati(lqr_params_transformed, sys_info, phi_x_op, grad_phi_x_op, t_span_curr)
+function u = compute_control_with_riccati(lqr_params_transformed, sys_info, phi_x_op, grad_phi_x_op, t_span_curr, x_op)
     
     % check if system is linear or not
     if(isempty(grad_phi_x_op))
@@ -8,7 +8,7 @@ function u = compute_control_with_riccati(lqr_params_transformed, sys_info, phi_
     end
 
     % parse stuff
-    B = sys_info.B; % TODO: get B as g(x) at x_op
+    B = sys_info.dynamics_g(x_op(1),x_op(2),x_op(3),x_op(4));
     D = sys_info.eig_vals;
     Q = lqr_params_transformed.Q;
     R = lqr_params_transformed.R;
