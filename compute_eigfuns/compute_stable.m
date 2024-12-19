@@ -1,20 +1,16 @@
-function phi_forward = compute_forward_flow(x_local, x_eqb, dynamics, D, W, sys_info)
+function phi_reverse = compute_reverse_flow(x_local, x_eqb, dynamics, D, W, sys_info)
     
     % parse inputs
     n_dim               = length(x_eqb);
     A_stable            = sys_info.A_stable;
     dynamics_linearized = @(x,u,sys_params) A_stable*x;
-    
-    % check for reverse time
-    if(sys_info.use_unstable)
-        use_reverse = false; 
-    elseif(sys_info.use_stable)
-        use_reverse = true; % test if it convergeces first!
-    end
 
-    % make sure all eigvals are positive
+    % check for reverse time
+    use_reverse = true;
+
+     % make sure all eigvals are negative
      if(any(ceil(diag(D))>0))
-         disp('eigvals are negative!! cannot use forward_time')
+         disp('eigvals are positive!! cannot use compute_stable')
          return
      end
 
@@ -43,7 +39,11 @@ function phi_forward = compute_forward_flow(x_local, x_eqb, dynamics, D, W, sys_
     end
 
     %% compute nonlinear part of eigfun
-    eig_vals = diag(D);
+    if(use_reverse)
+         eig_vals = -diag(D);
+    else
+        eig_vals = diag(D);
+    end
     integrand_nonlinear = cell(n_dim);
     for i = 1:n_dim
 
@@ -52,20 +52,20 @@ function phi_forward = compute_forward_flow(x_local, x_eqb, dynamics, D, W, sys_
         w       = W(:,i);
 
         % compute path integral
-        integrand = exp(-Tout*lambda).*(w'*Xout')';
+        integrand = exp(Tout*lambda).*(w'*Xout')';
         phi_nonlinear{i} = trapz(Tout,integrand,1);
         phi_linear{i} = w'*x_local;
         phi{i} = phi_linear{i}  + phi_nonlinear{i};
     
         % check for convergence (use abs value)
-        abs_integrand = exp(-Tout*lambda).*abs(Xout);
+        abs_integrand = exp(Tout*lambda).*abs(Xout);
         integrand_nonlinear{i} = abs_integrand(end);
     end
 
     % Loop through each element in phi and assign it to phi_forward.phi
     for i = 1:n_dim
-        phi_forward.phi(i)           = phi{i};
-        phi_forward.phi_linear(i)    = phi_linear{i};
-        phi_forward.phi_nonlinear(i) = phi_nonlinear{i};
-        phi_forward.integrand(i)     = integrand_nonlinear{i};
+        phi_reverse.phi(i)           = phi{i};
+        phi_reverse.phi_linear(i)    = phi_linear{i};
+        phi_reverse.phi_nonlinear(i) = phi_nonlinear{i};
+        phi_reverse.integrand(i)     = integrand_nonlinear{i};
     end

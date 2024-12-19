@@ -49,22 +49,25 @@ B           = [0;0; mm; nn];
 A = A_undamped;
 
 % useling pole placement
-k_poles  = place(A,B,-1*[-1;-2;-3;-4]);
+if(use_stable)
+    k_poles  = place(A,B,[-1;-2;-3;-4]);
+    A_stable = A-B*k_poles;
+    sys_info.A_stable = A_stable;
+else
+    k_poles    = place(A,B,[1;2;3;4]);
+    A_unstable = A-B*k_poles;
+    sys_info.A_unstable = A_unstable;
+end
 
 % using lqr (leads to complex eig vals)
 Q     = diag([200 1000 0 0]);
 R     = 0.035;
 k_lqr = lqr(A,B,Q,R);
 
-k = k_poles;
-A_stable = A - B*k;
-sys_info.A_stable   = A_stable;
-sys_info.A_unstable = A_stable;
-
 if(use_stable)
     [~,D,W] = eig(A_stable);
 elseif(use_unstable)
-    [~,D,W] = eig(A_stable);
+    [~,D,W] = eig(A_unstable);
 else
     % saddle?
     [~,D,W] = eig(A);

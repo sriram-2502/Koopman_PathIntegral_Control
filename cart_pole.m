@@ -11,7 +11,6 @@ addpath('dynamics')
 addpath('baseline_control')
 addpath('eigfun_control')
 addpath('compute_eigfuns')
-addpath('solve_riccati')
 addpath('utils')
 addpath('animations')
 
@@ -21,10 +20,10 @@ wrap_theta          = true;
 show_diagnositcs    = true;
 
 % setup stable or unstable system
-sys_params.use_stable   = true; % use forward flow
-sys_params.use_unstable = false; % use reverse flow
+sys_params.use_stable   = false; % locallcy stable
+sys_params.use_unstable = true; % locally unstable
 
-% note: using stable system and reverse flow works
+% note: using unstable system and reverse flow works
 % note: tune integration time in reverse_flow.m for this case
 % notw: use 1s or 2s as integration time depending on how far the ic is from upright pos
 
@@ -52,10 +51,10 @@ W = sys_info.eig_vectors;
 D = sys_info.eig_vals;
 
 % check forward/reverse time path integral
-if(all(ceil(diag(D)) <= 0))
-    disp('---- using forward time path integrals -----')
-elseif(all(ceil(diag(D)) > 0))
-    disp('---- using reverse time path integrals -----')
+if(all(round(diag(D)) >= 0))
+    disp('---- using path integrals for unstable system -----')
+elseif(all(round(diag(D)) < 0))
+    disp('---- using path integrals for stable system -----')
 end
 
 %% compute lqr gain

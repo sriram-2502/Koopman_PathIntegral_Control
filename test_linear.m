@@ -15,7 +15,7 @@ addpath('utils')
 addpath('animations')
 
 % setup params
-show_diagnositcs    = true;
+show_diagnositcs = true;
 
 % setup stable or unstable system
 sys_params.use_stable   = true; % use forward flow
@@ -37,10 +37,10 @@ W               = sys_info.eig_vectors;
 D               = sys_info.eig_vals; %TODO: check if order matters
 
 % check forward/reverse time path integral
-if(all(ceil(diag(D)) >= 0))
-    disp('---- using forward time path integrals -----')
-elseif(all(ceil(diag(D)) < 0))
-    disp('---- using reverse time path integrals -----')
+if(all(round(diag(D)) >= 0))
+    disp('---- using path integrals for unstable system -----')
+elseif(all(round(diag(D)) < 0))
+    disp('---- using path integrals for stable system -----')
 end
 
 % get A corresponding to stable or unstable system
