@@ -1,8 +1,9 @@
 function sys_info = cart_pole_info(sys_params)
 
+% set default to use stablizing control for path integrals
 if(nargin<1)
-    use_stable   = false;
-    use_unstable = true;
+    use_stable   = true;
+    use_unstable = false;
 else
     use_stable   = sys_params.use_stable;
     use_unstable = sys_params.use_unstable;

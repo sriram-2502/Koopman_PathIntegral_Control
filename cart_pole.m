@@ -77,7 +77,7 @@ t_start     = 0;
 t_end       = 5;
 max_iter    = floor(t_end/dt_sim);
 x_op1       = x_init;
-x_op2       = x_init - x_eqb;
+x_op2       = x_init;
 t_span      = t_start:dt_sim:t_end;
 iter        = 1;
 
@@ -153,16 +153,10 @@ for t_sim = t_start:dt_sim:t_end
     % wrap theta if necessary
     if(wrap_theta)
         theta1 = x_next1(2);
-        if(abs(theta1)<1e-3)
-            theta1 = 0;
-        end
         theta1 = mod(theta1,2*pi);
         x_next1w = [x_next1(1) theta1 x_next1(3) x_next1(4)];
 
         theta2 = x_next2(2);
-        if(abs(theta2)<1e-3)
-            theta2 = 0;
-        end
         theta2 = mod(theta2,2*pi);
         x_next2w = [x_next2(1) theta2 x_next2(3) x_next2(4)];
     else
@@ -196,7 +190,7 @@ delete(F);
 
 %% animate
 if(show_animation)
-    Xanimate = Xout1;
+    Xanimate = Xout2;
     hf = figure(11);
     % hf.WindowState = 'maximized';
     skip_rate  = 10;
