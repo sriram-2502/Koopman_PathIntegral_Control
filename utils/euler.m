@@ -1,4 +1,4 @@
-function x_next = euler(dynamics, dt_sim, x_op, u, use_reverse, sys_params)
+function x_next = euler(dynamics, dt_sim, x_op, u, use_reverse, sys_info)
     % Perform Euler integration to compute the next state
     % 
     % Inputs:
@@ -12,10 +12,10 @@ function x_next = euler(dynamics, dt_sim, x_op, u, use_reverse, sys_params)
     
     if(use_reverse)
         % Compute the rate of change of the state
-        dxdt = -dynamics(x_op, u, sys_params);  % use -f(x) for reverse time simulation
+        dxdt = -dynamics(x_op, u, sys_info);  % use -f(x) for reverse time simulation
     else
         % Compute the rate of change of the state
-        dxdt = dynamics(x_op, u, sys_params);  % Call the dynamics function to get dxdt
+        dxdt = dynamics(x_op, u, sys_info);  % Call the dynamics function to get dxdt
     end
     
     % Update the state using Euler integration

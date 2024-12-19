@@ -15,13 +15,11 @@ addpath('utils')
 addpath('animations')
 
 % setup params
-show_animation      = true;
-wrap_theta          = true;
 show_diagnositcs    = true;
 
 % setup stable or unstable system
-sys_params.use_stable   = false; % use forward flow
-sys_params.use_unstable = true; % use reverse flow
+sys_params.use_stable   = true; % use forward flow
+sys_params.use_unstable = false; % use reverse flow
 
 % fix seed
 rng(15)
@@ -39,9 +37,9 @@ W               = sys_info.eig_vectors;
 D               = sys_info.eig_vals; %TODO: check if order matters
 
 % check forward/reverse time path integral
-if(all(ceil(diag(D)) <= 0))
+if(all(ceil(diag(D)) >= 0))
     disp('---- using forward time path integrals -----')
-elseif(all(ceil(diag(D)) > 0))
+elseif(all(ceil(diag(D)) < 0))
     disp('---- using reverse time path integrals -----')
 end
 
@@ -53,7 +51,7 @@ elseif(sys_info.use_unstable)
 end
 
 %% compute path integrals and gradients
-phi             = compute_path_integrals(x_op, dynamics, sys_params);
+phi             = compute_path_integrals(x_op, dynamics, sys_info);
 grad_phi_x_op   = compute_gradients(phi);
 
 %% verify the gradients is the same as left eigenvectors
@@ -122,7 +120,7 @@ for t_sim = t_start:dt_sim:t_end
     waitbar(t_sim/t_end,p_bar,sprintf(string(t_sim)+'/'+string(t_end) +'s'))
     
     % ------ compute eigfn based control ------
-    phi             = compute_path_integrals(x_op1', dynamics, sys_params);
+    phi             = compute_path_integrals(x_op1', dynamics, sys_info);
     phi_x_op        = phi.phi_x_op;
     grad_phi_x_op   = compute_gradients(phi);
     P_riccati_curr  = reshape(P_riccati(iter,:),size(A));
@@ -143,8 +141,8 @@ for t_sim = t_start:dt_sim:t_end
 
     % ------ simulate the system ------
     use_reverse = false; % do forward simulation for control loop
-    x_next1     = euler(dynamics,dt_sim,x_op1',u1,use_reverse,sys_params);
-    x_next2     = euler(dynamics,dt_sim,x_op2',u2,use_reverse,sys_params);
+    x_next1     = euler(dynamics,dt_sim,x_op1',u1,use_reverse,sys_info);
+    x_next2     = euler(dynamics,dt_sim,x_op2',u2,use_reverse,sys_info);
   
     % ------ update states ------
     x_op1 = x_next1';
