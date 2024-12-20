@@ -25,13 +25,14 @@ sys_params.use_unstable = false; % use reverse flow
 rng(15)
 
 %% setup a random linear system of any dimension
-dynamics        = @dynamics_linear;
 n_states        = 4; 
 n_ctrl          = 1; % TODO: check wth n_ctrl > 1
-x_op            = rand(n_states,1);
 x               = sym('x',[n_states;1],'real');
 u               = sym('x',[n_ctrl;1],'real');
-[f,sys_info]    = dynamics(x, u, sys_params);
+sys_info        = linear_sys_info(x, u, sys_params);
+dynamics        = @dynamics_linear;
+x_op            = rand(n_states,1);
+f               = dynamics(x, u, sys_info);
 B               = sys_info.B;
 W               = sys_info.eig_vectors;
 D               = sys_info.eig_vals; %TODO: check if order matters
