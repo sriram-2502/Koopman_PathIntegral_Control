@@ -1,4 +1,4 @@
-function phi_forward = compute_forward_flow(x_local, x_eqb, dynamics, D, W, sys_info)
+function phi_forward = compute_unstable(x_local, x_eqb, dynamics, D, W, sys_info)
     
     % parse inputs
     n_dim               = length(x_eqb);
@@ -58,8 +58,7 @@ function phi_forward = compute_forward_flow(x_local, x_eqb, dynamics, D, W, sys_
         phi{i} = phi_linear{i}  + phi_nonlinear{i};
     
         % check for convergence (use abs value)
-        abs_integrand = exp(-Tout*lambda).*abs(Xout);
-        integrand_nonlinear{i} = abs_integrand(end);
+        integrand_nonlinear{i} = integrand(end);
     end
 
     % Loop through each element in phi and assign it to phi_forward.phi

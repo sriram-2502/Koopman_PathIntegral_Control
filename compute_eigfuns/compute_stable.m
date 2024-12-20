@@ -1,4 +1,4 @@
-function phi_reverse = compute_reverse_flow(x_local, x_eqb, dynamics, D, W, sys_info)
+function phi_reverse = compute_stable(x_local, x_eqb, dynamics, D, W, sys_info)
     
     % parse inputs
     n_dim               = length(x_eqb);
@@ -6,7 +6,7 @@ function phi_reverse = compute_reverse_flow(x_local, x_eqb, dynamics, D, W, sys_
     dynamics_linearized = @(x,u,sys_params) A_stable*x;
 
     % check for reverse time
-    use_reverse = true;
+    use_reverse = false;
 
      % make sure all eigvals are negative
      if(any(ceil(diag(D))>0))
@@ -17,7 +17,7 @@ function phi_reverse = compute_reverse_flow(x_local, x_eqb, dynamics, D, W, sys_
     %% open loop simualtion
     t_start = 0;
     dt_sim  = 0.01;
-    t_end   = 1;
+    t_end   = 2;
     Xout    = x_local';
     Tout    = 0;
     for t_sim = t_start:dt_sim:t_end
@@ -52,7 +52,7 @@ function phi_reverse = compute_reverse_flow(x_local, x_eqb, dynamics, D, W, sys_
         w       = W(:,i);
 
         % compute path integral
-        integrand = exp(Tout*lambda).*(w'*Xout')';
+        integrand = exp(-Tout*lambda).*(w'*Xout')';
         phi_nonlinear{i} = trapz(Tout,integrand,1);
         phi_linear{i} = w'*x_local;
         phi{i} = phi_linear{i}  + phi_nonlinear{i};

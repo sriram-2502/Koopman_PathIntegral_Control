@@ -51,7 +51,6 @@ B = sys_info.B;
 %% compute lqr gain
 % NOTE: swing up from bottom pos only works when damping is zero (b=0) in
 % sys_info setup
-
 Q = diag([200 1000 0 0]);
 R  = 0.035;
 lqr_params = get_lqr(A,B,Q,R);
