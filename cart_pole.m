@@ -162,7 +162,7 @@ for t_sim = t_start:dt_sim:t_end
     x_next1 = rk4(dynamics,dt_sim,x_op1',u1,use_reverse,sys_info);
     x_next2 = rk4(dynamics,dt_sim,x_op2',u2,use_reverse,sys_info);
     % shift eqb for dynamics
-%     x_next2 = x_next2 - x_eqb';
+    % x_next2 = x_next2 - x_eqb';
     
     % wrap theta if necessary
     if(wrap_theta)

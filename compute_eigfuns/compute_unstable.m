@@ -1,4 +1,4 @@
-function phi_forward = compute_forward_flow(x_local, x_eqb, dynamics, D, W, sys_info)
+function phi_forward = compute_unstable(x_local, x_eqb, dynamics, D, W, sys_info)
     
     % parse inputs
     n_dim               = length(x_eqb);
@@ -44,9 +44,9 @@ function phi_forward = compute_forward_flow(x_local, x_eqb, dynamics, D, W, sys_
     else
         eig_vals = diag(D);
     end
+    
     integrand_nonlinear = cell(n_dim);
     for i = 1:n_dim
-
         % get eigval and eigvec
         lambda  = eig_vals(i);
         w       = W(:,i);

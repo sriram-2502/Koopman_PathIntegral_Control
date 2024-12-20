@@ -1,4 +1,4 @@
-function phi_reverse = compute_reverse_flow(x_local, x_eqb, dynamics, D, W, sys_info)
+function phi_reverse = compute_stable(x_local, x_eqb, dynamics, D, W, sys_info)
     
     % parse inputs
     n_dim               = length(x_eqb);
