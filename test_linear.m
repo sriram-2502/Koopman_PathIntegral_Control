@@ -18,8 +18,8 @@ addpath('animations')
 show_diagnositcs = true;
 
 % setup stable or unstable system
-sys_params.use_stable   = true; % use forward flow
-sys_params.use_unstable = false; % use reverse flow
+sys_params.use_stable   = false; % use forward flow
+sys_params.use_unstable = true; % use reverse flow
 
 % fix seed
 rng(15)
