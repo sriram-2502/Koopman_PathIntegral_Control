@@ -20,12 +20,8 @@ wrap_theta          = true;
 show_diagnositcs    = true;
 
 % setup stable or unstable system
-sys_params.use_stable   = false; % locallcy stable
-sys_params.use_unstable = true; % locally unstable
-
-% note: using unstable system and reverse flow works
-% note: tune integration time in reverse_flow.m for this case
-% notw: use 1s or 2s as integration time depending on how far the ic is from upright pos
+sys_params.use_stable   = true; % locallcy stable
+sys_params.use_unstable = false; % locally unstable
 
 %% load dynamics
 sys_info = cart_pole_info(sys_params);
@@ -61,7 +57,7 @@ end
 % baseline for engergy based control
 Q_baseline = diag([200 1000 0 0]);
 R_baseline  = 0.035;
-lqr_params_baseline  = get_lqr(sys_info.A,B,Q_baseline,R_baseline);
+lqr_params_baseline = get_lqr(sys_info.A,B,Q_baseline,R_baseline);
 
 % for klqr - path integral based control
 Q           = diag([200 1000 0 0]);

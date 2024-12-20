@@ -13,5 +13,4 @@ function u = get_swing_up_control(lqr_params, x_op, x_desired)
             u_energy = get_energy_based(x_op);
             u = u_energy;  
     end
-
 end

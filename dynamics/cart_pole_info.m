@@ -50,7 +50,7 @@ A = A_undamped;
 
 % useling pole placement
 if(use_stable)
-    k_poles  = place(A,B,[-1;-2;-3;-4]);
+    k_poles  = place(A,B,[-1.1;-1.2;-1.3;-1.4]);
     A_stable = A-B*k_poles;
     sys_info.A_stable = A_stable;
 else
