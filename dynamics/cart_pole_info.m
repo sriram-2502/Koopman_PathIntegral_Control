@@ -50,7 +50,7 @@ A = A_undamped;
 
 % useling pole placement
 if(use_stable)
-    k_poles  = place(A,B,[-1.1;-1.2;-1.3;-1.4]);
+    k_poles  = place(A,B,9*[-1.2;-1.3;-1.4;-1.5]);
     A_stable = A-B*k_poles;
     sys_info.A_stable = A_stable;
 else
@@ -114,3 +114,5 @@ sys_info.use_unstable   = use_unstable;
 % local control 
 sys_info.k_poles = k_poles;
 sys_info.k_lqr   = k_lqr;
+
+sys_info.id = "cart_pole";

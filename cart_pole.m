@@ -71,7 +71,7 @@ Q_transformed           = inv(W)*Q*inv(W');
 lqr_params_transformed  = get_lqr(A_transformed,B_transformed,Q_transformed,R);
 
 %% simulation loop
-x_init      = [0.0 pi-pi/3 0.0 0.0]; 
+x_init      = [0.0 0.1 0.0 0.0]; 
 x_desired   = [0.0 pi 0.0 0.0];  
 x_eqb       = [0.0 pi 0.0 0.0]; 
 dt_sim      = 0.01; 
