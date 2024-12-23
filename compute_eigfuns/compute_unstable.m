@@ -4,9 +4,20 @@ function phi_forward = compute_unstable(x_local, x_eqb, dynamics, D, W, sys_info
     n_dim               = length(x_eqb);
     A_unstable          = sys_info.A_unstable;
     dynamics_linearized = @(x,u,sys_params) A_unstable*x;
+
+    % parse path integral setup
+    if(strcmp(sys_info.id,'cart_pole'))
+        path_integral_params = cart_pole_PI_params;
+    elseif(strcmp(sys_info.id,'non_lienar'))
+        path_integral_params = nonlinear_PI_params;
+    elseif(strcmp(sys_info.id,'lienar'))
+        path_integral_params = linear_PI_params;
+    else
+        path_integral_params = PI_params;
+    end
     
     % check for reverse time
-    use_reverse = true;
+    use_reverse = path_integral_params.unstable_reverse;
 
      % make sure all eigvals are positive
      % if(any(round(diag(D))<0))
@@ -16,8 +27,8 @@ function phi_forward = compute_unstable(x_local, x_eqb, dynamics, D, W, sys_info
 
     %% open loop simualtion
     t_start = 0;
-    dt_sim  = 0.01;
-    t_end   = 2;
+    dt_sim  = path_integral_params.dt_sim;
+    t_end   = path_integral_params.t_end;
     Xout    = x_local';
     Tout    = 0;
     for t_sim = t_start:dt_sim:t_end
@@ -44,7 +55,8 @@ function phi_forward = compute_unstable(x_local, x_eqb, dynamics, D, W, sys_info
     else
         eig_vals = diag(D);
     end
-    integrand_nonlinear = cell(n_dim);
+    integrand_convergence = cell(n_dim);
+    solution_convergence  = cell(n_dim);
     for i = 1:n_dim
 
         % get eigval and eigvec
@@ -57,8 +69,11 @@ function phi_forward = compute_unstable(x_local, x_eqb, dynamics, D, W, sys_info
         phi_linear{i} = w'*x_local;
         phi{i} = phi_linear{i}  + phi_nonlinear{i};
     
-        % check for convergence (use abs value)
-        integrand_nonlinear{i} = integrand(end);
+        % check for convergence
+        sol_conv = (w'*Xout')';
+        nonlinear_convergence = integrand(end);
+        integrand_convergence{i} = nonlinear_convergence;
+        solution_convergence{i}  = sol_conv(end);
     end
 
     % Loop through each element in phi and assign it to phi_forward.phi
@@ -66,5 +81,6 @@ function phi_forward = compute_unstable(x_local, x_eqb, dynamics, D, W, sys_info
         phi_forward.phi(i)           = phi{i};
         phi_forward.phi_linear(i)    = phi_linear{i};
         phi_forward.phi_nonlinear(i) = phi_nonlinear{i};
-        phi_forward.integrand(i)     = integrand_nonlinear{i};
+        phi_forward.integrand(i)     = integrand_convergence{i};
+        phi_forward.sol_conv(i)      = solution_convergence{i};
     end

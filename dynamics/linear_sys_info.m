@@ -6,17 +6,17 @@ function sys_info = linear_sys_info(x, u, sys_params)
 % outputs
 % sys info (struct)
 
-% init output struct
-sys_info = struct();
-n_dim = length(x);
-
-if(nargin<=2)
-    use_stable   = true;
-    use_unstable = false;
-else
-    use_stable   = sys_params.use_stable;
-    use_unstable = sys_params.use_unstable;
-end
+    % init output struct
+    sys_info = struct();
+    n_dim = length(x);
+    
+    if(nargin<=2)
+        use_stable   = true;
+        use_unstable = false;
+    else
+        use_stable   = sys_params.use_stable;
+        use_unstable = sys_params.use_unstable;
+    end
 
     %% Compute dxdt
     rng(102)
@@ -46,21 +46,21 @@ end
         return
     end
  
-% TODO: setup lqr option
-%     Q = eye(n_dim);
-%     R = eye(size(u));
-%     K_lqr = lqr(A,B,Q,R);
-%     A_stable = A-B*K_lqr;
-
-% init output struct  
-if(sys_params.use_stable)
-    [~,D,W] = eig(A_stable);
-elseif(sys_params.use_unstable)
-    [~,D,W] = eig(A_unstable);
-else
-    % saddle?
-    [~,D,W] = eig(A);
-end
+    % TODO: setup lqr option
+    %     Q = eye(n_dim);
+    %     R = eye(size(u));
+    %     K_lqr = lqr(A,B,Q,R);
+    %     A_stable = A-B*K_lqr;
+    
+    % init output struct  
+    if(sys_params.use_stable)
+        [~,D,W] = eig(A_stable);
+    elseif(sys_params.use_unstable)
+        [~,D,W] = eig(A_unstable);
+    else
+        % saddle?
+        [~,D,W] = eig(A);
+    end
     
     %% parse outputs
     sys_info.A              = A;
@@ -72,6 +72,7 @@ end
     sys_info.x_eqb          = zeros(size(x));
     sys_info.use_stable     = use_stable;
     sys_info.use_unstable   = use_unstable;
+    sys_info.id             = "linear";
 
 end
 

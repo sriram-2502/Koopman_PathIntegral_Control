@@ -38,7 +38,7 @@ function phi = compute_path_integrals_algebra(x_op, dynamics, sys_info)
         x_local = grid_points(idx,:)';
         
         for i = 1:n_dim
-            if(round(D(i))>0)
+            if(round(D(i,i))>0)
                 % compute path integral around the operating point
                 phi_forward = compute_unstable(x_local, x_eqb, dynamics, D, W, sys_info);
                 phi_complete(idx, i)   = phi_forward.phi(i);
@@ -54,7 +54,7 @@ function phi = compute_path_integrals_algebra(x_op, dynamics, sys_info)
                     phi_x_op(i)           = phi_forward.phi(i);
                     phi_integrand_x_op(i) = phi_integrand(idx, i);
                 end
-            elseif(round(D(i))<0)
+            elseif(round(D(i,i))<0)
                 phi_reverse = compute_stable(x_local, x_eqb, dynamics, D, W, sys_info);
                 phi_complete(idx, i)   = phi_reverse.phi(i);
                 phi_linear(idx, i)     = phi_reverse.phi_linear(i);

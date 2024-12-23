@@ -1,11 +1,11 @@
-function sys_info = saddle_sys_info(sys_params)
+function sys_info = nonlinear_sys_info(sys_params)
 %% system description
 % nonlinear ode x_dot = f(x) + Bu
 n = 2; m = 1;
 x = sym('x',[n,1],'real');
 
 % define analytical eig_funs
-Lam = [2;-1];
+Lam = [2;1];
 phiST_ana = @(x1,x2)x1-2*x2;
 phiUS_ana = @(x1,x2)x1+sin(x2);
 
@@ -93,3 +93,4 @@ sys_info.eig_vals       = D;
 sys_info.x_eqb          = zeros(n,1);
 sys_info.A_unstable     = A;
 sys_info.A_stable       = A;
+sys_info.id             = "nonlinear";

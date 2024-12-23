@@ -21,8 +21,8 @@ show_diagnositcs    = true;
 sys_params.use_linear_riccati = true; 
 
 %% load dynamics
-sys_info = saddle_sys_info(sys_params);
-dynamics = @dynamics_saddle;
+sys_info = nonlinear_sys_info(sys_params);
+dynamics = @dynamics_nonlinear;
 n_states = sys_info.state_dim; 
 n_ctrl   = sys_info.ctrl_dim;
 x        = sym('x',[n_states;1],'real');
@@ -45,7 +45,7 @@ end
 
 %% compute lqr gain
 Q_baseline = eye(size(n_states));
-R_baseline  = 0.1;
+R_baseline  = ones(size(n_ctrl));
 lqr_params_baseline = get_lqr(sys_info.A,B,Q_baseline,R_baseline);
 
 % for klqr - path integral based control
@@ -60,13 +60,13 @@ Q_transformed           = inv(W)*Q*inv(W');
 lqr_params_transformed  = get_lqr(A_transformed,B_transformed,Q_transformed,R);
 
 %% simulation loop
-x_init      = rand(n_states,1);  
+x_init      = 10*rand(n_states,1);  
 dt_sim      = 0.01; 
 t_start     = 0;
 t_end       = 5;
 max_iter    = floor(t_end/dt_sim);
-x_op1       = x_init;
-x_op2       = x_init;
+x_op1       = x_init';
+x_op2       = x_init';
 t_span      = t_start:dt_sim:t_end;
 iter        = 1;
 
@@ -91,8 +91,8 @@ end
 %% start simulation
 % logs
 Tout    = t_start;
-Xout1   = x_op1'; % for baseline controllers and animation
-Xout2   = x_op2'; % 
+Xout1   = x_op1; % for baseline controllers and animation
+Xout2   = x_op2; % 
 Uout1   = []; 
 Uout2   = []; 
 convergence = []; % plot this to check convergence criteria
@@ -109,10 +109,10 @@ for t_sim = t_start:dt_sim:t_end
     t_span_curr = t_sim:dt_sim:t_end+dt_sim;
 
     % get baseline lqr control
-    u1 = -lqr_params_baseline.K_lqr*x_op1;
+    u1 = -lqr_params_baseline.K_lqr*x_op1';
     
     % ------ compute eigfn based control ------
-    phi             = compute_path_integrals_algebra(x_op2', dynamics, sys_info);
+    phi             = compute_path_integrals(x_op2', dynamics, sys_info);
     phi_x_op        = phi.phi_x_op;
     grad_phi_x_op   = compute_gradients(phi);
     P_riccati_curr  = reshape(P_riccati(iter,:),size(A));
@@ -124,13 +124,13 @@ for t_sim = t_start:dt_sim:t_end
 
     % simulate
     use_reverse = false;
-    x_next1 = rk4(dynamics,dt_sim,x_op1,u1,use_reverse,sys_info);
-    x_next2 = rk4(dynamics,dt_sim,x_op2,u2,use_reverse,sys_info);
+    x_next1 = rk4(dynamics,dt_sim,x_op1',u1,use_reverse,sys_info);
+    x_next2 = rk4(dynamics,dt_sim,x_op2',u2,use_reverse,sys_info);
 
 
     % update states
-    x_op1 = x_next1;
-    x_op2 = x_next2;
+    x_op1 = x_next1';
+    x_op2 = x_next2';
     iter  = iter + 1;
 
     % logs 
@@ -180,7 +180,20 @@ for i = 1:n_ctrl
     
     % Set labels and legend
     xlabel('time (s)', 'Interpreter', 'latex');
-    ylabel(['Control ', num2str(i)], 'Interpreter', 'latex');  % Generic label for each state
+    ylabel(['Control ', num2str(i)], 'Interpreter', 'latex'); 
     legend('Interpreter', 'latex');
     grid on;
+end
+
+if(show_diagnositcs)
+    figure(44)
+    subplot(2,1,1)
+    plot(Tout(1:length(convergence)), convergence(:,1), 'DisplayName', 'baseline'); hold on;
+    xlabel('time (s)', 'Interpreter', 'latex');
+    ylabel('$\exp(-\lambda T) w^\top F_n(s_T(x))$', 'Interpreter', 'latex');
+
+    subplot(2,1,2)
+    plot(Tout(1:length(convergence)), convergence(:,2), 'DisplayName', 'baseline'); hold on;
+    xlabel('time (s)', 'Interpreter', 'latex');
+    ylabel('$\exp(-\lambda T) w^\top F_n(s_T(x))$', 'Interpreter', 'latex');
 end
