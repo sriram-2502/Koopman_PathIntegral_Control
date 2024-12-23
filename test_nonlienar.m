@@ -116,7 +116,11 @@ for t_sim = t_start:dt_sim:t_end
     u1 = -lqr_params_baseline.K_lqr*x_op1';
     
     % ------ compute eigfn based control ------
-    phi             = compute_path_integrals(x_op2', dynamics, sys_info);
+    if(~sys_info.use_stable && ~sys_info.use_unstable)
+        phi = compute_path_integrals_algebra(x_op2', dynamics, sys_info);
+    else
+        phi = compute_path_integrals(x_op2', dynamics, sys_info);
+    end
     phi_x_op        = phi.phi_x_op;
     grad_phi_x_op   = compute_gradients(phi);
     P_riccati_curr  = reshape(P_riccati(iter,:),size(A));

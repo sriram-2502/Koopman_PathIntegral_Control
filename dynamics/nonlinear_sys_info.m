@@ -11,7 +11,7 @@ elseif(sys_params.use_unstable)
     Lam = [2;1];
 else
     % only works if eigvalue is stable for second eig fun
-    Lam = [2;-1];
+    Lam = [-0.5;1];
 end
 
 % phiST_ana = @(x1,x2)x1-2*x2;

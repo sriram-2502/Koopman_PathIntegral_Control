@@ -1,4 +1,4 @@
-function eigen_fn = compute_eigen_fn(x_local, x_eqb, dynamics, D, W, sys_info)
+function eigen_fn_algebra = compute_eigen_fn_algebra(x_local, x_eqb, dynamics, D,D_negative, W, sys_info, k)
     % parse inputs
     n_dim = length(x_eqb);
 
@@ -19,7 +19,7 @@ function eigen_fn = compute_eigen_fn(x_local, x_eqb, dynamics, D, W, sys_info)
         path_integral_params = cart_pole_PI_params;
     elseif(strcmp(sys_info.id,'non_linear'))
         path_integral_params = nonlinear_PI_params;
-    elseif(strcmp(sys_info.id,'linear'))
+    elseif(strcmp(sys_info.id,'lienar'))
         path_integral_params = linear_PI_params;
     else
         path_integral_params = PI_params;
@@ -39,12 +39,24 @@ function eigen_fn = compute_eigen_fn(x_local, x_eqb, dynamics, D, W, sys_info)
      %     return
      % end
 
+     % setup for algebra
+     idx1            = ismember(diag(D), D_negative);
+     [lambda2, idx2] = max(diag(D)); % find max positive eig val
+     lambda1         = D_negative; % negative eig val
+     w1              = W(:,idx1);
+     w2              = W(:,idx2);
+     Q               = w1*w2';
+     lambda          = lambda1 + k*lambda2; % make sure lambda is always positive
+
     %% open loop simualtion
     t_start = 0;
     dt_sim  = path_integral_params.dt_sim;
     t_end   = path_integral_params.t_end;
     Xout    = x_local';
     Tout    = 0;
+    Xout_linear = x_local';
+    Xout_full   = x_local';
+    
     for t_sim = t_start:dt_sim:t_end
 
         % forward simulate using rk4 with no control
@@ -61,34 +73,27 @@ function eigen_fn = compute_eigen_fn(x_local, x_eqb, dynamics, D, W, sys_info)
         % logs
         Tout  = [Tout;t_sim];
         Xout  = [Xout;x_next];
+        Xout_full   = [Xout_full; x_next_full'];
+        Xout_linear = [Xout_linear; x_next_linear'];
     end
 
     %% compute nonlinear part of eigfun
-    integrand_convergence = cell(n_dim);
-    solution_convergence  = cell(n_dim);
-    for i = 1:n_dim
 
-        % get eigval and eigvec
-        lambda  = eig_vals(i);
-        w       = W(:,i);
+    % compute path integral
+    integrand = exp(-Tout*lambda).*((w2'*Xout_full').^(k-1)*(Xout_full)*(Q+k*Q')*(Xout'))';
+    phi_nonlinear = trapz(Tout,integrand,1);
+    phi_linear = (w1'*x_local)*(w2'*x_local)^k;
+    phi = phi_linear + phi_nonlinear;
 
-        % compute path integral
-        integrand = exp(-Tout*lambda).*(w'*Xout')';
-        phi_nonlinear{i} = trapz(Tout,integrand,1);
-        phi_linear{i} = w'*x_local;
-        phi{i} = phi_linear{i}  + phi_nonlinear{i};
-    
-        % check for convergence
-        sol_conv = (w'*Xout')';
-        integrand_convergence{i} = integrand(end);
-        solution_convergence{i}  = sol_conv(end);
-    end
+    % check for convergence
+    sol_conv = (w2'*Xout_full').^(k-1)*(Xout_full)*(Q+k*Q')*(Xout');
+    integrand_convergence = integrand(end);
+    solution_convergence  = sol_conv(end);
+
 
     % Loop through each element in phi and assign it to phi_forward.phi
-    for i = 1:n_dim
-        eigen_fn.phi(i)           = phi{i};
-        eigen_fn.phi_linear(i)    = phi_linear{i};
-        eigen_fn.phi_nonlinear(i) = phi_nonlinear{i};
-        eigen_fn.integrand(i)     = integrand_convergence{i};
-        eigen_fn.sol_conv(i)      = solution_convergence{i};
-    end
+    eigen_fn_algebra.phi           = phi;
+    eigen_fn_algebra.phi_linear    = phi_linear;
+    eigen_fn_algebra.phi_nonlinear = phi_nonlinear;
+    eigen_fn_algebra.integrand     = integrand_convergence;
+    eigen_fn_algebra.sol_conv      = solution_convergence;
