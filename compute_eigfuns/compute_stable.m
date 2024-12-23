@@ -9,10 +9,10 @@ function phi_reverse = compute_stable(x_local, x_eqb, dynamics, D, W, sys_info)
     use_reverse = false;
 
      % make sure all eigvals are negative
-     if(any(ceil(diag(D))>0))
-         disp('eigvals are positive!! cannot use compute_stable')
-         return
-     end
+     % if(any(round(diag(D))>0))
+     %     disp('eigvals are positive!! cannot use compute_stable')
+     %     return
+     % end
 
     %% open loop simualtion
     t_start = 0;

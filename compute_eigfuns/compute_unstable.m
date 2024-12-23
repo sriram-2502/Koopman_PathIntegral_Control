@@ -2,17 +2,17 @@ function phi_forward = compute_unstable(x_local, x_eqb, dynamics, D, W, sys_info
     
     % parse inputs
     n_dim               = length(x_eqb);
-    A_unstable            = sys_info.A_unstable;
+    A_unstable          = sys_info.A_unstable;
     dynamics_linearized = @(x,u,sys_params) A_unstable*x;
     
     % check for reverse time
     use_reverse = true;
 
      % make sure all eigvals are positive
-     if(any(round(diag(D))<0))
-         disp('eigvals are negative!! cannot use compute_unstable')
-         return
-     end
+     % if(any(round(diag(D))<0))
+     %     disp('eigvals are negative!! cannot use compute_unstable')
+     %     return
+     % end
 
     %% open loop simualtion
     t_start = 0;
