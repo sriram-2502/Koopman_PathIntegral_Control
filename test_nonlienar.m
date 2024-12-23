@@ -35,7 +35,7 @@ W = sys_info.eig_vectors;
 D = sys_info.eig_vals;
 
 % check forward/reverse time path integral
-if(all(round(diag(D)) >= 0))
+if(all(round(diag(D)) > 0))
     disp('---- using path integrals for unstable system -----')
 elseif(all(round(diag(D)) < 0))
     disp('---- using path integrals for stable system -----')
@@ -60,10 +60,10 @@ Q_transformed           = inv(W)*Q*inv(W');
 lqr_params_transformed  = get_lqr(A_transformed,B_transformed,Q_transformed,R);
 
 %% simulation loop
-x_init      = 10*rand(n_states,1);  
+x_init      = [1;0];  
 dt_sim      = 0.01; 
 t_start     = 0;
-t_end       = 5;
+t_end       = 10;
 max_iter    = floor(t_end/dt_sim);
 x_op1       = x_init';
 x_op2       = x_init';
@@ -96,6 +96,8 @@ Xout2   = x_op2; %
 Uout1   = []; 
 Uout2   = []; 
 convergence = []; % plot this to check convergence criteria
+eigen_function_analytical   = [];
+eigen_function_estimated    = [];
 
 % show progress bar
 w_bar = waitbar(0,'1','Name','running simulation loop...',...
@@ -120,6 +122,8 @@ for t_sim = t_start:dt_sim:t_end
     
     if(show_diagnositcs)
         convergence = [convergence;phi.phi_integrand_x_op];
+        eigen_function_analytical = [eigen_function_analytical; sys_info.eigen_fun(x_op2(1),x_op2(2))'];
+        eigen_function_estimated = [eigen_function_estimated; phi_x_op];
     end
 
     % simulate
@@ -185,6 +189,7 @@ for i = 1:n_ctrl
     grid on;
 end
 
+%%
 if(show_diagnositcs)
     figure(44)
     subplot(2,1,1)
@@ -196,4 +201,20 @@ if(show_diagnositcs)
     plot(Tout(1:length(convergence)), convergence(:,2), 'DisplayName', 'baseline'); hold on;
     xlabel('time (s)', 'Interpreter', 'latex');
     ylabel('$\exp(-\lambda T) w^\top F_n(s_T(x))$', 'Interpreter', 'latex');
+
+    figure(55)
+    subplot(2,1,1)
+    plot(Tout(1:length(convergence)), eigen_function_analytical(:,1), 'DisplayName', 'analytical'); hold on;
+    plot(Tout(1:length(convergence)), eigen_function_estimated(:,1), 'DisplayName', 'estimated'); hold on;
+    legend('Interpreter', 'latex');
+    xlabel('time (s)', 'Interpreter', 'latex');
+    ylabel('eigen function', 'Interpreter', 'latex');
+
+    subplot(2,1,2)
+    plot(Tout(1:length(convergence)), eigen_function_analytical(:,2), 'DisplayName', 'analytical'); hold on;
+    plot(Tout(1:length(convergence)), eigen_function_estimated(:,2), 'DisplayName', 'estimated'); hold on;
+    legend('Interpreter', 'latex');
+    xlabel('time (s)', 'Interpreter', 'latex');
+    ylabel('eigen function', 'Interpreter', 'latex');
+
 end

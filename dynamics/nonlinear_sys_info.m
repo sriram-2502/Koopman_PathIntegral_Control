@@ -22,7 +22,6 @@ else
     g_x = simplify(inv(dPhi_dx)*[1;2]);
 end
 
-
 eig_scale = 0.001;
 f_sim = inv(dPhi_dx)*diag(eig_scale*Lam)*phi_x;
 f_pi = matlabFunction(f_sim,'vars',{x}); 
@@ -61,7 +60,7 @@ wST = W(:,2);
 % eigenfunction values
 wUS = wUS./min(wUS(wUS~=0));
 wST = wST./min(wST(wST~=0));
-
+W = [wUS,wST];
 % define nonlinear part x_dot = Ax + fn(x)
 fn = f_x - A*x;
 
@@ -81,11 +80,11 @@ phi_analytical_function = @(x)[phiUS_ana(x(1),x(2)); phiST_ana(x(1),x(2))];
 grad_phi_analytical_function = matlabFunction(dPhi_dx,'vars',{x});
 
 %% setup system parameters for xdot = f(x) + B*u
-sys_info.A = A;
-sys_info.B = B;
-sys_info.A_koopman = D;
-sys_info.f = f;
-sys_info.g = g;
+sys_info.A              = A;
+sys_info.B              = B;
+sys_info.A_koopman      = D;
+sys_info.f              = f;
+sys_info.g              = g;
 sys_info.state_dim      = n;
 sys_info.ctrl_dim       = m;
 sys_info.eig_vectors    = W;
@@ -93,4 +92,5 @@ sys_info.eig_vals       = D;
 sys_info.x_eqb          = zeros(n,1);
 sys_info.A_unstable     = A;
 sys_info.A_stable       = A;
-sys_info.id             = "nonlinear";
+sys_info.id             = "non_linear";
+sys_info.eigen_fun      = Phi_ana;

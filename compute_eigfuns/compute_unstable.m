@@ -8,7 +8,7 @@ function phi_forward = compute_unstable(x_local, x_eqb, dynamics, D, W, sys_info
     % parse path integral setup
     if(strcmp(sys_info.id,'cart_pole'))
         path_integral_params = cart_pole_PI_params;
-    elseif(strcmp(sys_info.id,'non_lienar'))
+    elseif(strcmp(sys_info.id,'non_linear'))
         path_integral_params = nonlinear_PI_params;
     elseif(strcmp(sys_info.id,'lienar'))
         path_integral_params = linear_PI_params;
@@ -34,8 +34,8 @@ function phi_forward = compute_unstable(x_local, x_eqb, dynamics, D, W, sys_info
     for t_sim = t_start:dt_sim:t_end
 
         % forward simulate using rk4 with no control
-        x_next_full   = euler(dynamics,dt_sim,x_local,0,use_reverse,sys_info);
-        x_next_linear = euler(dynamics_linearized,dt_sim,x_local,0,use_reverse,sys_info);
+        x_next_full   = rk4(dynamics,dt_sim,x_local,0,use_reverse,sys_info);
+        x_next_linear = rk4(dynamics_linearized,dt_sim,x_local,0,use_reverse,sys_info);
 
         % shift eqb point
         x_next_full   = x_next_full   - x_eqb;
