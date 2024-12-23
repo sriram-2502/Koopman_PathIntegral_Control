@@ -5,8 +5,17 @@ n = 2; m = 1;
 x = sym('x',[n,1],'real');
 
 % define analytical eig_funs
-Lam = [2;1];
-phiST_ana = @(x1,x2)x1-2*x2;
+if(sys_params.use_stable)
+    Lam = -[2;1];
+elseif(sys_params.use_unstable)
+    Lam = [2;1];
+else
+    % only works if eigvalue is stable for second eig fun
+    Lam = [2;-1];
+end
+
+% phiST_ana = @(x1,x2)x1-2*x2;
+phiST_ana = @(x1,x2)sin(x1)-1.5*x2;
 phiUS_ana = @(x1,x2)x1+sin(x2);
 
 Phi_ana = @(x1,x2)[phiUS_ana(x1,x2); phiST_ana(x1,x2)];
@@ -94,3 +103,7 @@ sys_info.A_unstable     = A;
 sys_info.A_stable       = A;
 sys_info.id             = "non_linear";
 sys_info.eigen_fun      = Phi_ana;
+
+% setup for local control in path integral
+sys_info.use_stable     = sys_params.use_stable;
+sys_info.use_unstable   = sys_params.use_unstable;

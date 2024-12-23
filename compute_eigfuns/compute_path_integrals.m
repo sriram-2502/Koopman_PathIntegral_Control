@@ -38,37 +38,23 @@ function phi = compute_path_integrals(x_op, dynamics, sys_info)
         x_local = grid_points(idx,:)';
 
         % compute path integral around the operating point
-        if(all(round(diag(D)) >= 0))
-            phi_forward = compute_unstable(x_local, x_eqb, dynamics, D, W, sys_info);
-            phi_complete(idx, 1:n_dim)   = phi_forward.phi(:)';
-            phi_linear(idx, 1:n_dim)     = phi_forward.phi_linear(:)';
-            phi_nonlinear(idx, 1:n_dim)  = phi_forward.phi_nonlinear(:)';
-            phi_integrand(idx, 1:n_dim)  = phi_forward.integrand(:)';
+        if(all((diag(D)) ~= 0))
+            phi                          = compute_eigen_fn(x_local, x_eqb, dynamics, D, W, sys_info);
+            phi_complete(idx, 1:n_dim)   = phi.phi(:)';
+            phi_linear(idx, 1:n_dim)     = phi.phi_linear(:)';
+            phi_nonlinear(idx, 1:n_dim)  = phi.phi_nonlinear(:)';
+            phi_integrand(idx, 1:n_dim)  = phi.integrand(:)';
 
             % Extract values for current operating point
             if(norm(x_local - x_op) <= 1e-3)
                 if(show_diagnostics)
                     disp('----- computing eig_fun at x_op -----')
                 end
-                phi_x_op(1:n_dim)           = phi_forward.phi(:)';
+                phi_x_op(1:n_dim)           = phi.phi(:)';
                 phi_integrand_x_op(1:n_dim) = phi_integrand(idx, 1:n_dim);
             end
-
-        elseif(all(round(diag(D)) < 0))
-            phi_reverse = compute_stable(x_local, x_eqb, dynamics, D, W, sys_info);
-            phi_complete(idx, 1:n_dim)   = phi_reverse.phi(:)';
-            phi_linear(idx, 1:n_dim)     = phi_reverse.phi_linear(:)';
-            phi_nonlinear(idx, 1:n_dim)  = phi_reverse.phi_nonlinear(:)';
-            phi_integrand(idx, 1:n_dim)  = phi_reverse.integrand(:)';
-
-            % Extract values for current operating point
-            if(norm(x_local - x_op) <= 1e-3)
-                if(show_diagnostics)
-                    disp('----- computing eig_fun at x_op -----')
-                end
-                phi_x_op(1:n_dim)           = phi_reverse.phi(:)';
-                phi_integrand_x_op(1:n_dim) = phi_integrand(idx, 1:n_dim);
-            end
+        else
+            disp('!!! system has zero eigen values. Cannot use path integrals !!!')
         end
     end
 
