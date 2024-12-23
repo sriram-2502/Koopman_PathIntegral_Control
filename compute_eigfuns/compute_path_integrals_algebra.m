@@ -7,6 +7,7 @@ function phi = compute_path_integrals_algebra(x_op, dynamics, sys_info)
     D     = sys_info.eig_vals;
     W     = sys_info.eig_vectors;
     x_eqb = sys_info.x_eqb;
+    [lambda_max, idx_lambda_max] = max(diag(D)); % find max positive eig val
 
     %% setup grid
     [local_grid, local_axes] = setup_local_grid(x_op);
@@ -38,36 +39,37 @@ function phi = compute_path_integrals_algebra(x_op, dynamics, sys_info)
         x_local = grid_points(idx,:)';
         
         for i = 1:n_dim
-            if(round(D(i,i))>0)
+            if(D(i,i)>0)
                 % compute path integral around the operating point
-                phi_forward = compute_unstable(x_local, x_eqb, dynamics, D, W, sys_info);
-                phi_complete(idx, i)   = phi_forward.phi(i);
-                phi_linear(idx, i)     = phi_forward.phi_linear(i);
-                phi_nonlinear(idx, i)  = phi_forward.phi_nonlinear(i);
-                phi_integrand(idx, i)  = phi_forward.integrand(i);
+                phi = compute_eigen_fn(x_local, x_eqb, dynamics, D, W, sys_info);
+                phi_complete(idx, i)   = phi.phi(i);
+                phi_linear(idx, i)     = phi.phi_linear(i);
+                phi_nonlinear(idx, i)  = phi.phi_nonlinear(i);
+                phi_integrand(idx, i)  = phi.integrand(i);
     
                 % Extract values for current operating point
                 if(norm(x_local - x_op) <= 1e-3)
                     if(show_diagnostics)
                         disp('----- computing eig_fun at x_op -----')
                     end
-                    phi_x_op(i)           = phi_forward.phi(i);
+                    phi_x_op(i)           = phi.phi(i);
                     phi_integrand_x_op(i) = phi_integrand(idx, i);
                 end
-            elseif(round(D(i,i))<0)
-                phi_reverse = compute_stable(x_local, x_eqb, dynamics, D, W, sys_info);
-                phi_complete(idx, i)   = phi_reverse.phi(i);
-                phi_linear(idx, i)     = phi_reverse.phi_linear(i);
-                phi_nonlinear(idx, i)  = phi_reverse.phi_nonlinear(i);
-                phi_integrand(idx, i)  = phi_reverse.integrand(i);
+            elseif(D(i,i)<0)
+                k = 5; % pick k so that lambda1 + k*lambda2 > 0;
+                phi_algerba = compute_eigen_fn_algebra(x_local, x_eqb, dynamics, D,D(i,i), W, sys_info,k);
+                phi_complete(idx, i)   = phi_algerba.phi/phi_complete(idx, idx_lambda_max)^k;
+                phi_linear(idx, i)     = phi_algerba.phi_linear/phi_linear(idx,idx_lambda_max)^k;
+                phi_nonlinear(idx, i)  = phi_algerba.phi_nonlinear/phi_nonlinear(idx,idx_lambda_max)^k;
+                phi_integrand(idx, i)  = phi_algerba.integrand;
 
                 % Extract values for current operating point
                 if(norm(x_local - x_op) <= 1e-3)
                     if(show_diagnostics)
                         disp('----- computing eig_fun at x_op -----')
                     end
-                    phi_x_op(i)           = phi_reverse.phi(i);
-                    phi_integrand_x_op(i) = phi_integrand(idx, i);
+                    phi_x_op(i)           = phi_algerba.phi/phi_complete(idx, idx_lambda_max)^k;
+                    phi_integrand_x_op(i) = phi_algerba.integrand;
                 end
             else
                 disp('!!! eigenvalue is zero. cannot use path integrals !!!')

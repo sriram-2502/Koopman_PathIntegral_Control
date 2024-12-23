@@ -1,16 +1,25 @@
-function phi_forward = compute_unstable(x_local, x_eqb, dynamics, D, W, sys_info)
-    
+function eigen_fn = compute_eigen_fn(x_local, x_eqb, dynamics, D, W, sys_info)
     % parse inputs
-    n_dim               = length(x_eqb);
-    A_unstable          = sys_info.A_unstable;
-    dynamics_linearized = @(x,u,sys_params) A_unstable*x;
+    n_dim = length(x_eqb);
+
+    % get modified linear system
+    if(sys_info.use_stable)
+        A_stable = sys_info.A_stable;
+        dynamics_linearized = @(x,u,sys_params) A_stable*x;
+    elseif(sys_info.use_unstable)
+        A_unstable = sys_info.A_unstable;
+        dynamics_linearized = @(x,u,sys_params) A_unstable*x;
+    else
+        A = sys_info.A;
+        dynamics_linearized = @(x,u,sys_params) A*x;
+    end
 
     % parse path integral setup
     if(strcmp(sys_info.id,'cart_pole'))
         path_integral_params = cart_pole_PI_params;
-    elseif(strcmp(sys_info.id,'non_lienar'))
+    elseif(strcmp(sys_info.id,'non_linear'))
         path_integral_params = nonlinear_PI_params;
-    elseif(strcmp(sys_info.id,'lienar'))
+    elseif(strcmp(sys_info.id,'linear'))
         path_integral_params = linear_PI_params;
     else
         path_integral_params = PI_params;
@@ -18,6 +27,11 @@ function phi_forward = compute_unstable(x_local, x_eqb, dynamics, D, W, sys_info
     
     % check for reverse time
     use_reverse = path_integral_params.unstable_reverse;
+    if(use_reverse)
+        eig_vals = -diag(D);
+    else
+        eig_vals = diag(D);
+    end
 
      % make sure all eigvals are positive
      % if(any(round(diag(D))<0))
@@ -50,11 +64,6 @@ function phi_forward = compute_unstable(x_local, x_eqb, dynamics, D, W, sys_info
     end
 
     %% compute nonlinear part of eigfun
-    if(use_reverse)
-         eig_vals = -diag(D);
-    else
-        eig_vals = diag(D);
-    end
     integrand_convergence = cell(n_dim);
     solution_convergence  = cell(n_dim);
     for i = 1:n_dim
@@ -70,16 +79,15 @@ function phi_forward = compute_unstable(x_local, x_eqb, dynamics, D, W, sys_info
     
         % check for convergence
         sol_conv = (w'*Xout')';
-        nonlinear_convergence = integrand(end);
-        integrand_convergence{i} = nonlinear_convergence;
+        integrand_convergence{i} = integrand(end);
         solution_convergence{i}  = sol_conv(end);
     end
 
     % Loop through each element in phi and assign it to phi_forward.phi
     for i = 1:n_dim
-        phi_forward.phi(i)           = phi{i};
-        phi_forward.phi_linear(i)    = phi_linear{i};
-        phi_forward.phi_nonlinear(i) = phi_nonlinear{i};
-        phi_forward.integrand(i)     = integrand_convergence{i};
-        phi_forward.sol_conv(i)      = solution_convergence{i};
+        eigen_fn.phi(i)           = phi{i};
+        eigen_fn.phi_linear(i)    = phi_linear{i};
+        eigen_fn.phi_nonlinear(i) = phi_nonlinear{i};
+        eigen_fn.integrand(i)     = integrand_convergence{i};
+        eigen_fn.sol_conv(i)      = solution_convergence{i};
     end
