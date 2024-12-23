@@ -46,7 +46,7 @@ B           = [0;0; mm; nn];
 [~,D_undamped,W_undamped] = eig(A_undamped);
 
 %% define locally stable system
-A = A_undamped;
+A = A_damped;
 
 % useling pole placement
 if(use_stable)

@@ -7,7 +7,7 @@ function phi = compute_path_integrals_algebra(x_op, dynamics, sys_info)
     D     = sys_info.eig_vals;
     W     = sys_info.eig_vectors;
     x_eqb = sys_info.x_eqb;
-    [lambda2, idx_lambda2] = max(diag(D)); % find max positive eig val
+    [lambda_max, idx_lambda_max] = max(diag(D)); % find max positive eig val
 
     %% setup grid
     [local_grid, local_axes] = setup_local_grid(x_op);
@@ -56,11 +56,11 @@ function phi = compute_path_integrals_algebra(x_op, dynamics, sys_info)
                     phi_integrand_x_op(i) = phi_integrand(idx, i);
                 end
             elseif(D(i,i)<0)
-                k = 1; % pick k so that lambda1 + k*lambda2 > 0;
+                k = 5; % pick k so that lambda1 + k*lambda2 > 0;
                 phi_algerba = compute_eigen_fn_algebra(x_local, x_eqb, dynamics, D,D(i,i), W, sys_info,k);
-                phi_complete(idx, i)   = phi_algerba.phi/phi_complete(idx, idx_lambda2)^k;
-                phi_linear(idx, i)     = phi_algerba.phi_linear/phi_linear(idx,idx_lambda2)^k;
-                phi_nonlinear(idx, i)  = phi_algerba.phi_nonlinear/phi_nonlinear(idx,idx_lambda2)^k;
+                phi_complete(idx, i)   = phi_algerba.phi/phi_complete(idx, idx_lambda_max)^k;
+                phi_linear(idx, i)     = phi_algerba.phi_linear/phi_linear(idx,idx_lambda_max)^k;
+                phi_nonlinear(idx, i)  = phi_algerba.phi_nonlinear/phi_nonlinear(idx,idx_lambda_max)^k;
                 phi_integrand(idx, i)  = phi_algerba.integrand;
 
                 % Extract values for current operating point
@@ -68,7 +68,7 @@ function phi = compute_path_integrals_algebra(x_op, dynamics, sys_info)
                     if(show_diagnostics)
                         disp('----- computing eig_fun at x_op -----')
                     end
-                    phi_x_op(i)           = phi_algerba.phi/phi_complete(idx, idx_lambda2)^k;
+                    phi_x_op(i)           = phi_algerba.phi/phi_complete(idx, idx_lambda_max)^k;
                     phi_integrand_x_op(i) = phi_algerba.integrand;
                 end
             else
