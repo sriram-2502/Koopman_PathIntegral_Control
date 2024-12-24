@@ -73,7 +73,7 @@ Q_transformed           = inv(W)*Q*inv(W');
 lqr_params_transformed  = get_lqr(A_transformed,B_transformed,Q_transformed,R);
 
 %% simulation loop
-x_init      = [0.0 pi-pi/4 0.0 0.0]; 
+x_init      = [0.0 0.1 0.0 0.0]; 
 x_desired   = [0.0 pi 0.0 0.0];  
 x_eqb       = [0.0 pi 0.0 0.0]; 
 dt_sim      = 0.01; 
@@ -128,7 +128,8 @@ for t_sim = t_start:dt_sim:t_end
     u1 = get_swing_up_control(lqr_params_baseline, x_op1, x_desired);
     
     % ------ compute eigfn based control ------
-    phi             = compute_path_integrals_algebra(x_op2', dynamics, sys_info);
+    k = 10;
+    phi             = compute_path_integrals_algebra(x_op2', dynamics, sys_info, k);
     phi_x_op        = phi.phi_x_op;
     grad_phi_x_op   = compute_gradients(phi);
     P_riccati_curr  = reshape(P_riccati(iter,:),size(A));
@@ -146,8 +147,8 @@ for t_sim = t_start:dt_sim:t_end
             u2     = u_lqr;
     else
             %disp('-- switching to klqr ---')
-            u_volt = compute_control(lqr_params_transformed,P_riccati_curr, phi_x_op, grad_phi_x_op);
-            % u_volt = compute_control_with_riccati(lqr_params_transformed,sys_info,phi_x_op,grad_phi_x_op, t_span_curr, x_op2);
+            % u_volt = compute_control(lqr_params_transformed,P_riccati_curr, phi_x_op, grad_phi_x_op);
+            u_volt = compute_control_with_riccati(lqr_params,sys_info,phi_x_op,grad_phi_x_op, t_span_curr, x_op2);
             u_volt = saturate_fun(u_volt,12,-12);
             x_dot  = x_op2(3);
             u_klqr = volts_to_force(x_dot,u_volt);
@@ -158,8 +159,7 @@ for t_sim = t_start:dt_sim:t_end
     use_reverse = false;
     x_next1 = rk4(dynamics,dt_sim,x_op1',u1,use_reverse,sys_info);
     x_next2 = rk4(dynamics,dt_sim,x_op2',u2,use_reverse,sys_info);
-    % shift eqb for dynamics
-%     x_next2 = x_next2 - x_eqb';
+
     
     % wrap theta if necessary
     if(wrap_theta)

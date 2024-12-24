@@ -127,8 +127,8 @@ for t_sim = t_start:dt_sim:t_end
     phi_x_op        = phi.phi_x_op;
     grad_phi_x_op   = compute_gradients(phi);
     P_riccati_curr  = reshape(P_riccati(iter,:),size(A));
-%     u2              = compute_control(lqr_params_transformed,P_riccati_curr, phi_x_op, grad_phi_x_op);
-    u2              = compute_control_with_riccati(lqr_params_transformed,sys_info,phi_x_op,grad_phi_x_op, t_span_curr, x_op2);
+    % u2            = compute_control(lqr_params_transformed,P_riccati_curr, phi_x_op, grad_phi_x_op);
+    u2              = compute_control_with_riccati(lqr_params,sys_info,phi_x_op,grad_phi_x_op, t_span_curr, x_op2);
     
     if(show_diagnositcs)
         convergence = [convergence;phi.phi_integrand_x_op];
