@@ -1,4 +1,4 @@
-function phi = compute_path_integrals_algebra(x_op, dynamics, sys_info)
+function phi = compute_path_integrals_algebra(x_op, dynamics, sys_info,k)
     
     show_wait_bar    = false;
     show_diagnostics = false;
@@ -56,7 +56,6 @@ function phi = compute_path_integrals_algebra(x_op, dynamics, sys_info)
                     phi_integrand_x_op(i) = phi_integrand(idx, i);
                 end
             elseif(D(i,i)<0)
-                k = 5; % pick k so that lambda1 + k*lambda2 > 0;
                 phi_algerba = compute_eigen_fn_algebra(x_local, x_eqb, dynamics, D,D(i,i), W, sys_info,k);
                 phi_complete(idx, i)   = phi_algerba.phi/phi_complete(idx, idx_lambda_max)^k;
                 phi_linear(idx, i)     = phi_algerba.phi_linear/phi_linear(idx,idx_lambda_max)^k;

@@ -11,7 +11,7 @@ elseif(sys_params.use_unstable)
     Lam = [2;1];
 else
     % only works if eigvalue is stable for second eig fun
-    Lam = [-0.5;1];
+    Lam = [-2;1];
 end
 
 % phiST_ana = @(x1,x2)x1-2*x2;
@@ -92,8 +92,8 @@ grad_phi_analytical_function = matlabFunction(dPhi_dx,'vars',{x});
 sys_info.A              = A;
 sys_info.B              = B;
 sys_info.A_koopman      = D;
-sys_info.f              = f;
-sys_info.g              = g;
+sys_info.dynamics_f     = f;
+sys_info.dynamics_g     = g;
 sys_info.state_dim      = n;
 sys_info.ctrl_dim       = m;
 sys_info.eig_vectors    = W;

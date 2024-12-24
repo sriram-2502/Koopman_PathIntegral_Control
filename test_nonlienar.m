@@ -17,7 +17,7 @@ addpath('animations')
 % setup params
 show_diagnositcs = true;
 sys_params.use_stable   = false; % locallcy stable
-sys_params.use_unstable = true; % locally unstable
+sys_params.use_unstable = false;  % locally unstable
 
 % use linearization for solving riccati in transformed coordinates
 sys_params.use_linear_riccati = true; 
@@ -62,10 +62,10 @@ Q_transformed           = inv(W)*Q*inv(W');
 lqr_params_transformed  = get_lqr(A_transformed,B_transformed,Q_transformed,R);
 
 %% simulation loop
-x_init      = [1;0]; % best initial condition for comparison is [1;0]  
+x_init      = [0;-2]; % best initial condition for comparison is [1;0]  
 dt_sim      = 0.01; 
 t_start     = 0;
-t_end       = 5;
+t_end       = 10;
 max_iter    = floor(t_end/dt_sim);
 x_op1       = x_init';
 x_op2       = x_init';
@@ -117,14 +117,18 @@ for t_sim = t_start:dt_sim:t_end
     
     % ------ compute eigfn based control ------
     if(~sys_info.use_stable && ~sys_info.use_unstable)
-        phi = compute_path_integrals_algebra(x_op2', dynamics, sys_info);
+        % saddle case
+        k = 3; % parameter for algebra
+        phi = compute_path_integrals_algebra(x_op2', dynamics, sys_info, k);
     else
+        % stable and anti stable case
         phi = compute_path_integrals(x_op2', dynamics, sys_info);
     end
     phi_x_op        = phi.phi_x_op;
     grad_phi_x_op   = compute_gradients(phi);
     P_riccati_curr  = reshape(P_riccati(iter,:),size(A));
-    u2              = compute_control(lqr_params_transformed,P_riccati_curr, phi_x_op, grad_phi_x_op);
+%     u2              = compute_control(lqr_params_transformed,P_riccati_curr, phi_x_op, grad_phi_x_op);
+    u2              = compute_control_with_riccati(lqr_params_transformed,sys_info,phi_x_op,grad_phi_x_op, t_span_curr, x_op2);
     
     if(show_diagnositcs)
         convergence = [convergence;phi.phi_integrand_x_op];

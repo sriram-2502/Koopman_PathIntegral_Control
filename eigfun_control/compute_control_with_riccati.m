@@ -8,7 +8,7 @@ function u = compute_control_with_riccati(lqr_params_transformed, sys_info, phi_
     end
 
     % parse stuff
-    B = sys_info.dynamics_g(x_op(1),x_op(2),x_op(3),x_op(4));
+    B = sys_info.dynamics_g(x_op(:));
     D = sys_info.eig_vals;
     Q = lqr_params_transformed.Q;
     R = lqr_params_transformed.R;
@@ -22,12 +22,6 @@ function u = compute_control_with_riccati(lqr_params_transformed, sys_info, phi_
    % solve riccati at curren time step
    [t_riccati,P_riccati] = compute_riccati(lqr_params_transformed, t_span_curr);
    P_riccati_curr = reshape(P_riccati(1,:),size(lqr_params_transformed.A));
-
-    % parse system info
-    B = lqr_params_transformed.B; %lienarized version of g(x) in transformed coordinates
-
-    % parse lqr params
-    R = lqr_params_transformed.R;
 
     % get control
     if(use_linear)
