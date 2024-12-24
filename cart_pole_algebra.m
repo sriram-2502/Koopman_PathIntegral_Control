@@ -128,7 +128,7 @@ for t_sim = t_start:dt_sim:t_end
     u1 = get_swing_up_control(lqr_params_baseline, x_op1, x_desired);
     
     % ------ compute eigfn based control ------
-    k = 10;
+    k = 3;
     phi             = compute_path_integrals_algebra(x_op2', dynamics, sys_info, k);
     phi_x_op        = phi.phi_x_op;
     grad_phi_x_op   = compute_gradients(phi);
