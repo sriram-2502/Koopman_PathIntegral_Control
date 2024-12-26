@@ -23,6 +23,9 @@ show_diagnositcs    = true;
 sys_params.use_stable   = false; % locallcy stable
 sys_params.use_unstable = false; % locally unstable
 
+% use Hopf formula (using this wills set running state cost to zero)
+sys_params.use_hopf = false;
+
 %% load dynamics
 sys_info = cart_pole_info(sys_params);
 dynamics = @dynamics_cart_pole;
@@ -62,7 +65,11 @@ R_baseline  = 0.035;
 lqr_params_baseline = get_lqr(sys_info.A,B,Q_baseline,R_baseline);
 
 % for klqr - path integral based control
-Q           = diag([200 1000 0 0]);
+if(sys_params.use_hopf)
+    Q = diag([0 0 0 0]);
+else
+    Q = diag([200 1000 0 0]);
+end
 R           = 0.035;
 lqr_params  = get_lqr(A,B,Q,R);
 
@@ -73,12 +80,21 @@ Q_transformed           = inv(W)*Q*inv(W');
 lqr_params_transformed  = get_lqr(A_transformed,B_transformed,Q_transformed,R);
 
 %% simulation loop
-x_init      = [0.0 0.1 0.0 0.0]; 
+if(sys_params.use_hopf)
+    % can only work with theta = pi-pi/4 or pi-pi/3 currently
+    t_end   = 3; % need shorter end time to have high enough P value to swing up
+    x_init  = [0.0 pi-pi/3 0.0 0.0]; 
+else
+    % can swing up from bottm (theta = 0.1)
+    t_end   = 3;
+    x_init  = [0.0 0.1 0.0 0.0]; 
+end
+
 x_desired   = [0.0 pi 0.0 0.0];  
 x_eqb       = [0.0 pi 0.0 0.0]; 
 dt_sim      = 0.01; 
 t_start     = 0;
-t_end       = 5;
+
 max_iter    = floor(t_end/dt_sim);
 x_op1       = x_init;
 x_op2       = x_init;
@@ -139,7 +155,7 @@ for t_sim = t_start:dt_sim:t_end
     end
     
     if (abs(x_desired(2)-x_op2(2)))*(180/pi) <= 30 
-            %disp('-- switching to lqr ---')
+            disp('-- switching to lqr ---')
             u_volt = -lqr_params_baseline.K_lqr*(x_op2'-x_desired');
             u_volt = saturate_fun(u_volt,12,-12);
             x_dot  = x_op2(3);
