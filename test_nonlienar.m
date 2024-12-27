@@ -16,8 +16,8 @@ addpath('animations')
 
 % setup params
 show_diagnositcs = true;
-sys_params.use_stable   = false; % locallcy stable
-sys_params.use_unstable = true;  % locally unstable
+sys_params.use_stable   = true; % locallcy stable (works)
+sys_params.use_unstable = false;  % locally unstable (should test this!)
 
 % use linearization for solving riccati in transformed coordinates
 sys_params.use_linear_riccati = true; 

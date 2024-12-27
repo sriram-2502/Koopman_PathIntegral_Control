@@ -15,7 +15,7 @@ addpath('utils')
 addpath('animations')
 
 % setup params
-show_animation      = true;
+show_animation      = false;
 wrap_theta          = true;
 show_diagnositcs    = true;
 
@@ -73,7 +73,7 @@ Q_transformed           = inv(W)*Q*inv(W');
 lqr_params_transformed  = get_lqr(A_transformed,B_transformed,Q_transformed,R);
 
 %% simulation loop
-x_init      = [pi/2 0.0]; 
+x_init      = [pi-0.1 0.0]; 
 x_desired   = [pi 0];  
 x_eqb       = [pi 0]; 
 dt_sim      = 0.01; 
@@ -170,8 +170,8 @@ for t_sim = t_start:dt_sim:t_end
     end
 
     % shift eqb point for plots
-    x_next1p = x_next1' - x_eqb;
-    x_next2p = x_next2' - x_eqb;
+    x_next1p = x_next1w - x_eqb;
+    x_next2p = x_next2w - x_eqb;
 
     % update states
     x_op1 = x_next1w;
@@ -209,7 +209,7 @@ if(show_animation)
     frameIndex = 1;
     for i = 1:skip_rate:length(Xanimate)
        animate_pendulum(Xanimate(i), sys_info);
-       pause(0.01);
+       pause(0.1);
     
        % Capture frame and assign it to movieVector
        movieVector(frameIndex) = getframe(hf);
@@ -236,8 +236,8 @@ end
 figure(22);
 % First subplot: theta
 subplot(2,2,1)
-plot(Tout, Xout1(:,1), 'DisplayName', 'baseline'); hold on;
-plot(Tout, Xout2(:,1),'-', 'DisplayName', 'klqr'); hold on;
+plot(Tout, Xout1p(:,1), 'DisplayName', 'baseline'); hold on;
+plot(Tout, Xout2p(:,1),'-', 'DisplayName', 'klqr'); hold on;
 xlabel('time (s)', 'Interpreter', 'latex');
 ylabel('position, $\theta$', 'Interpreter', 'latex');
 legend('Interpreter', 'latex');
@@ -245,8 +245,8 @@ grid on
 
 % Second subplot: theta_dot
 subplot(2,2,2)
-plot(Tout, Xout1(:,2), 'DisplayName', 'baseline'); hold on;
-plot(Tout, Xout2(:,2),'-', 'DisplayName', 'klqr'); hold on;
+plot(Tout, Xout1p(:,2), 'DisplayName', 'baseline'); hold on;
+plot(Tout, Xout2p(:,2),'-', 'DisplayName', 'klqr'); hold on;
 xlabel('time (s)', 'Interpreter', 'latex');
 ylabel('velocity, $\dot \theta$', 'Interpreter', 'latex');
 box on;
@@ -293,6 +293,8 @@ if(show_diagnositcs)
     ylabel('eigen function', 'Interpreter', 'latex');
 
     subplot(2,3,5)
+    eigen_function_estimated_test = eigen_function_estimated;
+    eigen_function_estimated_test(abs(eigen_function_estimated_test)>100)=100;
     plot(Tout(1:length(eigen_function_estimated)), eigen_function_estimated(:,2), 'DisplayName', 'estimated'); hold on;
     % plot(Tout(1:length(eigen_function_linearized)), eigen_function_linearized(2,:), 'DisplayName', 'linearized'); hold on;
     legend('Interpreter', 'latex');
@@ -303,12 +305,12 @@ if(show_diagnositcs)
     plot(Tout(1:length(solution_convergence)), solution_convergence(:,1), 'DisplayName', 'convergence'); hold on;
     legend('Interpreter', 'latex');
     xlabel('time (s)', 'Interpreter', 'latex');
-    ylabel('eigen function', 'Interpreter', 'latex');
+    ylabel('solution (X1)', 'Interpreter', 'latex');
 
     subplot(2,3,6)
     plot(Tout(1:length(solution_convergence)), solution_convergence(:,2), 'DisplayName', 'convergence'); hold on;
     legend('Interpreter', 'latex');
     xlabel('time (s)', 'Interpreter', 'latex');
-    ylabel('eigen function', 'Interpreter', 'latex')
+    ylabel('solution (X2)', 'Interpreter', 'latex')
 
 end
