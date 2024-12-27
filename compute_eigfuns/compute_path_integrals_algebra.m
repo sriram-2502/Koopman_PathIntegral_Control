@@ -25,7 +25,8 @@ function phi = compute_path_integrals_algebra(x_op, dynamics, sys_info,k)
     phi_nonlinear = nan(num_elements, n_dim); 
     phi_integrand = nan(num_elements, n_dim); 
     phi_x_op           = nan(1, n_dim);  
-    phi_integrand_x_op = nan(1, n_dim); 
+    phi_integrand_x_op = nan(1, n_dim);
+    phi_sol_conv_x_op  = nan(1, n_dim);
     
     % load a progress bar
     if(show_wait_bar)
@@ -54,6 +55,7 @@ function phi = compute_path_integrals_algebra(x_op, dynamics, sys_info,k)
                     end
                     phi_x_op(i)           = phi.phi(i);
                     phi_integrand_x_op(i) = phi_integrand(idx, i);
+                    phi_sol_conv_x_op(i)  = phi.sol_conv(i);
                 end
             end
         end
@@ -72,7 +74,7 @@ function phi = compute_path_integrals_algebra(x_op, dynamics, sys_info,k)
                     end
                     phi_x_op(i)           = phi_algerba.phi/phi_complete(idx, idx_lambda_max)^k;
                     phi_integrand_x_op(i) = phi_algerba.integrand;
-                end
+                    phi_sol_conv_x_op(i)  = phi_algerba.sol_conv;
             end
         end
     end
@@ -117,4 +119,5 @@ function phi = compute_path_integrals_algebra(x_op, dynamics, sys_info,k)
     % store eigfun values at the operating point
     phi.phi_x_op           = phi_x_op;
     phi.phi_integrand_x_op = phi_integrand_x_op;
+    phi.phi_sol_conv_x_op  = phi_sol_conv_x_op;
 end

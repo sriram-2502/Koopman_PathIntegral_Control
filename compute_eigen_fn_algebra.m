@@ -19,8 +19,10 @@ function eigen_fn_algebra = compute_eigen_fn_algebra(x_local, x_eqb, dynamics, D
         path_integral_params = cart_pole_PI_params;
     elseif(strcmp(sys_info.id,'non_linear'))
         path_integral_params = nonlinear_PI_params;
-    elseif(strcmp(sys_info.id,'lienar'))
+    elseif(strcmp(sys_info.id,'linear'))
         path_integral_params = linear_PI_params;
+    elseif(strcmp(sys_info.id,'pendulum'))
+        path_integral_params = pendulum_PI_params;
     else
         path_integral_params = PI_params;
     end

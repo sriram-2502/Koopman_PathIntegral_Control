@@ -23,18 +23,15 @@ show_diagnositcs    = true;
 sys_params.use_stable   = false; % locallcy stable
 sys_params.use_unstable = false; % locally unstable
 
-% use Hopf formula (using this will set running state cost to zero)
-sys_params.use_hopf = false;
-
 %% load dynamics
-sys_info = cart_pole_info(sys_params);
-dynamics = @dynamics_cart_pole;
-n_states = 4; 
+sys_info = pendulum_info(sys_params);
+dynamics = @dynamics_pendulum;
+n_states = 2; 
 n_ctrl   = 1;
 x        = sym('x',[n_states;1],'real');
 u        = sym('x',[n_ctrl;1],'real');
 
-[dxdt,fx,gx]        = dynamics_cart_pole(x, u, sys_info);
+[dxdt,fx,gx]        = dynamics(x, u, sys_info);
 sys_info.dynamics_f = matlabFunction(fx,'vars',x);
 sys_info.dynamics_g = matlabFunction(gx,'vars',x);
 
@@ -50,7 +47,7 @@ W = sys_info.eig_vectors;
 D = sys_info.eig_vals;
 
 % check forward/reverse time path integral
-if(all(round(diag(D)) >= 0))
+if(all(round(diag(D)) > 0))
     disp('---- using path integrals for unstable system -----')
 elseif(all(round(diag(D)) < 0))
     disp('---- using path integrals for stable system -----')
@@ -60,17 +57,13 @@ end
 
 %% compute lqr gain
 % baseline for engergy based control
-Q_baseline = diag([200 1000 0 0]);
-R_baseline  = 0.035;
+Q_baseline = diag([1 1]);
+R_baseline  = 1;
 lqr_params_baseline = get_lqr(sys_info.A,B,Q_baseline,R_baseline);
 
 % for klqr - path integral based control
-if(sys_params.use_hopf)
-    Q = diag([0 0 0 0]);
-else
-    Q = diag([200 1000 0 0]);
-end
-R           = 0.035;
+Q           = Q_baseline;
+R           = R_baseline;
 lqr_params  = get_lqr(A,B,Q,R);
 
 % solving lqr in koopman coordinates
@@ -80,21 +73,12 @@ Q_transformed           = inv(W)*Q*inv(W');
 lqr_params_transformed  = get_lqr(A_transformed,B_transformed,Q_transformed,R);
 
 %% simulation loop
-if(sys_params.use_hopf)
-    % can only work with theta = pi-pi/4 or pi-pi/3 currently
-    t_end   = 3; % need shorter end time to have high enough P value to swing up
-    x_init  = [0.0 pi-pi/3 0.0 0.0]; 
-else
-    % can swing up from bottm (theta = 0.1)
-    t_end   = 3;
-    x_init  = [0.0 0.1 0.0 0.0]; 
-end
-
-x_desired   = [0.0 pi 0.0 0.0];  
-x_eqb       = [0.0 pi 0.0 0.0]; 
+x_init      = [pi/2 0.0]; 
+x_desired   = [pi 0];  
+x_eqb       = [pi 0]; 
 dt_sim      = 0.01; 
 t_start     = 0;
-
+t_end       = 5;
 max_iter    = floor(t_end/dt_sim);
 x_op1       = x_init;
 x_op2       = x_init;
@@ -122,13 +106,18 @@ end
 % logs
 Tout    = t_start;
 Xout1   = x_op1; % for baseline controllers and animation
-Xout2   = x_op2; % 
-Xout1p  = [x_op1(1) pi-x_op1(2) x_op1(3) x_op1(4)]; % shifted coordinates
-Xout2p  = [x_op1(1) pi-x_op1(2) x_op1(3) x_op1(4)]; % shifted coordinates
+Xout2   = x_op2; % for path integral
+Xout1p  = [pi-x_op1(1) x_op1(2)]; % shifted coordinates
+Xout2p  = [pi-x_op2(1) x_op2(2)]; % shifted coordinates
 Uout1   = []; 
 Uout2   = []; 
-convergence = []; % plot this to check convergence criteria
 
+% diagnostics
+integrand_convergence       = []; % plot this to check convergence criteria
+eigen_function_estimated    = [];
+solution_convergence        = [];
+
+%% start simulation
 % show progress bar
 w_bar = waitbar(0,'1','Name','running simulation loop...',...
     'CreateCancelBtn','setappdata(gcbf,''canceling'',1)');
@@ -141,35 +130,24 @@ for t_sim = t_start:dt_sim:t_end
     t_span_curr = t_sim:dt_sim:t_end+dt_sim;
 
     % get energy based control
-    u1 = get_swing_up_control(lqr_params_baseline, x_op1, x_desired);
+    u1 = -lqr_params.K_lqr*(x_op1-x_desired)';
     
     % ------ compute eigfn based control ------
-    k = 3;
+    k = 2;
     phi             = compute_path_integrals_algebra(x_op2', dynamics, sys_info, k);
     phi_x_op        = phi.phi_x_op;
     grad_phi_x_op   = compute_gradients(phi);
     P_riccati_curr  = reshape(P_riccati(iter,:),size(A));
 
     if(show_diagnositcs)
-        convergence = [convergence;phi.phi_integrand_x_op];
+        integrand_convergence = [integrand_convergence;phi.phi_integrand_x_op];
+        solution_convergence  = [solution_convergence;phi.phi_sol_conv_x_op];
+        eigen_function_estimated = [eigen_function_estimated; phi_x_op];
     end
     
-    if (abs(x_desired(2)-x_op2(2)))*(180/pi) <= 30 
-            % disp('-- switching to lqr ---')
-            u_volt = -lqr_params_baseline.K_lqr*(x_op2'-x_desired');
-            u_volt = saturate_fun(u_volt,12,-12);
-            x_dot  = x_op2(3);
-            u_lqr  = volts_to_force(x_dot,u_volt);
-            u2     = u_lqr;
-    else
-            %disp('-- switching to klqr ---')
-            % u_volt = compute_control(lqr_params_transformed,P_riccati_curr, phi_x_op, grad_phi_x_op);
-            u_volt = compute_control_with_riccati(lqr_params,sys_info,phi_x_op,grad_phi_x_op, t_span_curr, x_op2);
-            u_volt = saturate_fun(u_volt,12,-12);
-            x_dot  = x_op2(3);
-            u_klqr = volts_to_force(x_dot,u_volt);
-            u2     = u_klqr;
-    end
+    % u_klqr = compute_control(lqr_params_transformed,P_riccati_curr, phi_x_op, grad_phi_x_op);
+    % u_klqr = compute_control_with_riccati(lqr_params,sys_info,phi_x_op,grad_phi_x_op, t_span_curr, x_op2);
+    u2     = 0;
 
     % simulate
     use_reverse = false;
@@ -179,13 +157,13 @@ for t_sim = t_start:dt_sim:t_end
     
     % wrap theta if necessary
     if(wrap_theta)
-        theta1 = x_next1(2);
+        theta1 = x_next1(1);
         theta1 = mod(theta1,2*pi);
-        x_next1w = [x_next1(1) theta1 x_next1(3) x_next1(4)];
+        x_next1w = [theta1 x_next1(2)];
 
-        theta2 = x_next2(2);
+        theta2 = x_next2(1);
         theta2 = mod(theta2,2*pi);
-        x_next2w = [x_next2(1) theta2 x_next2(3) x_next2(4)];
+        x_next2w = [theta2 x_next2(2)];
     else
         x_next1w = x_next1';
         x_next2w = x_next2';
@@ -217,11 +195,12 @@ delete(F);
 
 %% animate
 if(show_animation)
-    Xanimate = Xout2;
+    Xanimate = Xout2(:,1);
+
     hf = figure(11);
     % hf.WindowState = 'maximized';
     skip_rate  = 10;
-    
+
     % Initialize movieVector array with the correct structure
     numFrames = floor(length(Xanimate) / skip_rate);
     movieVector(1:numFrames) = struct('cdata', [], 'colormap', []);
@@ -229,7 +208,7 @@ if(show_animation)
     % Animation loop with frame index
     frameIndex = 1;
     for i = 1:skip_rate:length(Xanimate)
-       animate_cart_pole(Xanimate(i,1),Xanimate(i,2));
+       animate_pendulum(Xanimate(i), sys_info);
        pause(0.01);
     
        % Capture frame and assign it to movieVector
@@ -255,44 +234,25 @@ end
 
 %% state and control plots
 figure(22);
-% First subplot: x
+% First subplot: theta
 subplot(2,2,1)
-plot(Tout, Xout1p(:,1), 'DisplayName', 'baseline'); hold on;
-plot(Tout, Xout2p(:,1),'-', 'DisplayName', 'klqr'); hold on;
+plot(Tout, Xout1(:,1), 'DisplayName', 'baseline'); hold on;
+plot(Tout, Xout2(:,1),'-', 'DisplayName', 'klqr'); hold on;
 xlabel('time (s)', 'Interpreter', 'latex');
-ylabel('position, $x$', 'Interpreter', 'latex');
+ylabel('position, $\theta$', 'Interpreter', 'latex');
 legend('Interpreter', 'latex');
 grid on
 
-% Second subplot: theta
+% Second subplot: theta_dot
 subplot(2,2,2)
-plot(Tout, Xout1p(:,2), 'DisplayName', 'baseline'); hold on;
-plot(Tout, Xout2p(:,2),'-', 'DisplayName', 'klqr'); hold on;
+plot(Tout, Xout1(:,2), 'DisplayName', 'baseline'); hold on;
+plot(Tout, Xout2(:,2),'-', 'DisplayName', 'klqr'); hold on;
 xlabel('time (s)', 'Interpreter', 'latex');
-ylabel('angle, $\theta$', 'Interpreter', 'latex');
+ylabel('velocity, $\dot \theta$', 'Interpreter', 'latex');
 box on;
 legend('Interpreter', 'latex');
 grid on
 
-% Third subplot: x_dot
-subplot(2,2,3)
-plot(Tout, Xout1p(:,3), 'DisplayName', 'baseline'); hold on;
-plot(Tout, Xout2p(:,3),'-', 'DisplayName', 'klqr'); hold on;
-xlabel('time (s)', 'Interpreter', 'latex');
-ylabel('velocity, $\dot{x}$', 'Interpreter', 'latex');
-box on;
-legend('Interpreter', 'latex');
-grid
-
-% Fourth subplot: theta_dot
-subplot(2,2,4)
-plot(Tout, Xout1p(:,4), 'DisplayName', 'baseline'); hold on;
-plot(Tout, Xout2p(:,4),'-', 'DisplayName', 'klqr'); hold on;
-xlabel('time (s)', 'Interpreter', 'latex');
-ylabel('angular velocity, $\dot{\theta}$', 'Interpreter', 'latex');
-box on;
-legend('Interpreter', 'latex');
-grid
 
 figure(33);
 % Loop over each control and create subplots
@@ -309,4 +269,46 @@ for i = 1:n_ctrl
     ylabel(['Control ', num2str(i)], 'Interpreter', 'latex');  % Generic label for each state
     legend('Interpreter', 'latex');
     grid on;
+end
+
+%%
+if(show_diagnositcs)
+    figure(44)
+    subplot(2,3,1)
+    plot(Tout(1:length(integrand_convergence)), integrand_convergence(:,1), 'DisplayName', 'convergence'); hold on;
+    xlabel('time (s)', 'Interpreter', 'latex');
+    ylabel('$\exp(-\lambda T) w^\top F_n(s_T(x))$', 'Interpreter', 'latex');
+
+    subplot(2,3,4)
+    plot(Tout(1:length(integrand_convergence)), integrand_convergence(:,2), 'DisplayName', 'convergence'); hold on;
+    xlabel('time (s)', 'Interpreter', 'latex');
+    ylabel('$\exp(-\lambda T) w^\top F_n(s_T(x))$', 'Interpreter', 'latex');
+
+    subplot(2,3,2)
+    eigen_function_linearized = W'*Xout2';
+    plot(Tout(1:length(eigen_function_estimated)), eigen_function_estimated(:,1), 'DisplayName', 'estimated'); hold on;
+    plot(Tout(1:length(eigen_function_linearized)), eigen_function_linearized(1,:), 'DisplayName', 'linearized'); hold on;
+    legend('Interpreter', 'latex');
+    xlabel('time (s)', 'Interpreter', 'latex');
+    ylabel('eigen function', 'Interpreter', 'latex');
+
+    subplot(2,3,5)
+    plot(Tout(1:length(eigen_function_estimated)), eigen_function_estimated(:,2), 'DisplayName', 'estimated'); hold on;
+    % plot(Tout(1:length(eigen_function_linearized)), eigen_function_linearized(2,:), 'DisplayName', 'linearized'); hold on;
+    legend('Interpreter', 'latex');
+    xlabel('time (s)', 'Interpreter', 'latex');
+    ylabel('eigen function', 'Interpreter', 'latex')
+
+    subplot(2,3,3)
+    plot(Tout(1:length(solution_convergence)), solution_convergence(:,1), 'DisplayName', 'convergence'); hold on;
+    legend('Interpreter', 'latex');
+    xlabel('time (s)', 'Interpreter', 'latex');
+    ylabel('eigen function', 'Interpreter', 'latex');
+
+    subplot(2,3,6)
+    plot(Tout(1:length(solution_convergence)), solution_convergence(:,2), 'DisplayName', 'convergence'); hold on;
+    legend('Interpreter', 'latex');
+    xlabel('time (s)', 'Interpreter', 'latex');
+    ylabel('eigen function', 'Interpreter', 'latex')
+
 end

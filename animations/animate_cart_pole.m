@@ -1,4 +1,4 @@
-function animation =  IP_Animation(x,theta)
+function animation =  animate_cart_pole(x,theta)
 
 persistent j
 persistent pjx

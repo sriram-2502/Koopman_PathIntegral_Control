@@ -17,7 +17,7 @@ addpath('animations')
 % setup params
 show_diagnositcs = true;
 sys_params.use_stable   = false; % locallcy stable
-sys_params.use_unstable = false;  % locally unstable
+sys_params.use_unstable = true;  % locally unstable
 
 % use linearization for solving riccati in transformed coordinates
 sys_params.use_linear_riccati = true; 
@@ -62,7 +62,7 @@ Q_transformed           = inv(W)*Q*inv(W');
 lqr_params_transformed  = get_lqr(A_transformed,B_transformed,Q_transformed,R);
 
 %% simulation loop
-x_init      = [0;-2]; % best initial condition for comparison is [1;0]  
+x_init      = [1;0]; % best initial condition for comparison is [1;0]  
 dt_sim      = 0.01; 
 t_start     = 0;
 t_end       = 10;
